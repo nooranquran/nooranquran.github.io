@@ -1,7 +1,8 @@
 // آسانی کار با سایت: ده بهبود کوچک، هر کدام پشت کلید امکانات (features.js) با روشن/خاموش مدیر در «مدیریت › تنظیمات › امکانات سایت»
 // و پنهان شدن برای هر کس در «منوی ☰ › تنظیمات › نمایش امکانات».
 //  dock: نوار میان‌بر پایین صفحه روی گوشی (قرآن، ادعیه، ذکرشمار، نوران من، منو)؛ وقتی برگه‌ای باز است یا صفحه‌کلید بالاست پنهان می‌شود
-//  recent: «اخیراً» بالای منوی ☰؛ چهار گزینه آخری که از منو زده شده (localStorage، کلید menuRecent: [{ a: ویژگی‌های data-*، h: متن }])
+//  recent: «اخیراً» بالای منوی ☰؛ چهار گزینه آخری که از منو زده شده (localStorage، کلید menuRecent: [{ a: ویژگی‌های data-*، h: متن }])؛
+//          هر بار که منو باز می‌شود جمع‌شده است و با زدن باز می‌شود. گزینه‌هایی که خودشان همیشه بالای منو دیده می‌شوند (نوران من، چله‌های من) تکرار نمی‌شوند.
 //  totop: دکمه ↑ «بازگشت به بالا» وقتی در صفحه یا متن بلند پایین رفته‌اید و کمی بالا می‌کشید
 //  swipe: ورق زدن قرآن‌خوان و کتاب‌ها با کشیدن انگشت (به راست: صفحه بعد، به چپ: صفحه قبل؛ مثل ورق زدن مصحف)
 //  pinch: بزرگ و کوچک کردن متن قرآن‌خوان، دعا و کتاب با باز و بسته کردن دو انگشت (همان دکمه‌های + و − خود خواننده)
@@ -40,8 +41,9 @@
 .ez-up.show{opacity:1;transform:none}
 .ez-up svg{width:24px;height:24px}
 .ez-up:hover{background:var(--deep)}
-.ez-rh{margin:8px 16px 4px;font-size:14px;font-weight:700;color:var(--muted)}
 .ez-recent{padding:6px 0;border-bottom:1px solid #eadfca}
+.ez-recent .sm-grp b{color:var(--muted)}
+.ez-rbody[hidden]{display:none}
 .ez-toast{position:fixed;z-index:80;left:16px;right:16px;width:fit-content;max-width:calc(100vw - 32px);margin:0 auto;bottom:calc(24px + env(safe-area-inset-bottom));padding:10px 18px;border-radius:999px;background:var(--deep);color:#fff;font-size:15px;text-align:center;text-shadow:none;box-shadow:0 4px 14px #0005}
 .ez-net{position:fixed;z-index:78;left:12px;right:12px;max-width:640px;margin:0 auto;bottom:calc(16px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;padding:8px 14px;background:#5a1b1b;color:#fff;text-shadow:none;border:1px solid var(--gold);border-radius:var(--r-card);font-size:15px;line-height:1.7;box-shadow:0 4px 14px #0005}
 .ez-net span{flex:1;min-width:0}
@@ -107,18 +109,27 @@
     const h = it.innerHTML, list = read(REC, []).filter(x => selOf(x.a) !== selOf(a));
     list.unshift({ a, h }); write(REC, list.slice(0, 4));
   }, true);
+  // باز بودن «اخیراً» فقط تا بسته شدن همین منو می‌ماند؛ بار بعد دوباره جمع‌شده است.
+  let recOpen = false;
   function drawRecent() {
     const body = smBody(); if (!body) return;
     body.querySelector(':scope > .ez-recent')?.remove();
     if (!on('recent') || !document.querySelector('.sm.show')) return;
-    // فقط گزینه‌هایی که هنوز در منو هستند (امکانی که خاموش شده یا ثبت‌نامی که بسته شده، خودش کنار می‌رود)
-    const list = read(REC, []).filter(x => x && x.a && body.querySelector(selOf(x.a)));
+    // فقط گزینه‌هایی که هنوز در منو هستند (امکانی که خاموش شده یا ثبت‌نامی که بسته شده، خودش کنار می‌رود)،
+    // و فقط آن‌هایی که داخل یک دسته جمع‌شدنی‌اند؛ گزینه تک‌بخشی که همیشه بالای منو دیده می‌شود دوباره نمی‌آید.
+    const list = read(REC, []).filter(x => x && x.a && [...body.querySelectorAll(selOf(x.a))].some(n => n.closest('.sm-grp-body')));
     if (!list.length) return;
     const box = document.createElement('div'); box.className = 'ez-recent';
-    box.innerHTML = '<h4 class="ez-rh">اخیراً</h4>' + list.map((x, i) => `<button type="button" class="sm-item" data-ez-rec="${i}">${x.h}</button>`).join('');
+    box.innerHTML = `<button type="button" class="sm-grp" aria-expanded="${recOpen}"><b>🕘 اخیراً</b><small>${fa(list.length)}</small><i>▾</i></button><div class="ez-rbody"${recOpen ? '' : ' hidden'}>`
+      + list.map((x, i) => `<button type="button" class="sm-item" data-ez-rec="${i}">${x.h}</button>`).join('') + '</div>';
     // متن ذخیره‌شده خود منو بوده، ولی برای اطمینان فقط ساختار ساده‌اش (آیکون، عنوان، توضیح) نگه داشته می‌شود
     box.querySelectorAll('[data-ez-rec]').forEach(b => b.querySelectorAll('script,iframe,img,svg,input,button').forEach(n => n.remove()));
     box.addEventListener('click', e => {
+      const g = e.target.closest('.sm-grp');
+      if (g) {
+        recOpen = !recOpen; g.setAttribute('aria-expanded', recOpen); box.querySelector('.ez-rbody').hidden = !recOpen;
+        return;
+      }
       const b = e.target.closest('[data-ez-rec]'); if (!b) return;
       e.stopPropagation();
       const x = list[+b.dataset.ezRec], orig = x && [...body.querySelectorAll(selOf(x.a))].find(n => !box.contains(n));
@@ -131,7 +142,7 @@
       const body = smBody(), nav = document.querySelector('.sm');
       if (!body || !nav) return false;
       new MutationObserver(() => { if (!body.querySelector(':scope > .ez-recent')) drawRecent(); }).observe(body, { childList: true });
-      new MutationObserver(drawRecent).observe(nav, { attributes: true, attributeFilter: ['class'] });
+      new MutationObserver(() => { if (!nav.classList.contains('show')) recOpen = false; drawRecent(); }).observe(nav, { attributes: true, attributeFilter: ['class'] });
       return true;
     };
     watch() || document.addEventListener('DOMContentLoaded', watch, { once: true });

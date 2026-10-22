@@ -122,6 +122,13 @@
 .chl-grid i.m{background:#f6e3e3;border-color:#e5c3c3;color:#a35a5a}
 .chl-grid i.t{outline:2px solid var(--gold);outline-offset:1px;color:var(--deep);font-weight:700}
 .chl-grid i.n{opacity:.45}
+.chl-grid i[data-gday]{cursor:pointer}
+.chl-grid i.on{box-shadow:0 0 0 2px #fffaf0,0 0 0 4px var(--deep)}
+.chl-gday:empty{display:none}
+.chl-gday{margin:8px 0 0;padding:8px 12px;background:var(--cream);border:1px solid var(--gold);border-radius:var(--r-card);font-size:15px;line-height:1.8}
+.chl-gday b{color:var(--deep)}
+.chl-gday .chl-gst{display:block;color:var(--muted);font-size:14px}
+.chl-gday .reg-tools{margin-top:6px}
 .chl-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
 .chl-legend b{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-left:4px;border:1px solid #e3d6b8;border-radius:3px}
 .chl-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
@@ -634,16 +641,31 @@ ${active.map(card).join('')}${ended.length ? `<details class="chl-fold"${active.
   // کسی که از فهرست رزرو آمده، روزهای پیش از آمدنش جامانده حساب نمی‌شود.
   // (روز قرائت از اذان صبح شروع می‌شود؛ پیش از اذان، تاریخ تقویم یک روز جلوتر است.)
   const fromDay = m => { const p = m.promoted_day && m.promoted_day > today ? today : m.promoted_day; return p && p > m.start_date ? p : m.start_date; };
+  // جزء روز i ام دوره (جزءخوانی گردشی)
+  const juzOn = (m, i) => ((Math.max(1, m.slot || 1) - 1) + (Math.max(1, i) - 1)) % 30 + 1;
   function grid(m) {
-    const done = new Set(m.marked || []), n = dayNo(m), from = fromDay(m);
+    const done = new Set(m.marked || []), n = dayNo(m), from = fromDay(m), juz = m.kind === 'juz';
     let s = '';
     for (let i = 1; i <= m.days; i++) {
       const iso = isoAdd(m.start_date, i - 1);
       const cls = done.has(iso) ? 'd' : i === n ? 't' : i < n && iso >= from ? 'm' : 'n';
-      s += `<i class="${cls}" title="${esc(dateFa(iso))}">${done.has(iso) ? '✓' : fa(i)}</i>`;
+      // جزءخوانی: با زدن هر روز، جزء آن روز و خوانده شدن یا نشدنش زیر جدول می‌آید (سهم روزهای جامانده).
+      s += juz ? `<i class="${cls}" role="button" tabindex="0" data-gday="${m.code}|${iso}|${i}" aria-label="${esc(dateFa(iso))}، جزء ${fa(juzOn(m, i))}">${done.has(iso) ? '✓' : fa(i)}</i>`
+        : `<i class="${cls}" title="${esc(dateFa(iso))}">${done.has(iso) ? '✓' : fa(i)}</i>`;
     }
-    return `<div class="chl-grid" aria-label="جدول روزهای چله">${s}</div><div class="chl-legend"><span><b style="background:var(--emerald)"></b>خوانده‌شده</span><span><b style="background:#f6e3e3"></b>جامانده</span><span><b style="outline:2px solid var(--gold)"></b>امروز</span></div>`;
+    return `<div class="chl-grid" aria-label="جدول روزهای چله">${s}</div><div class="chl-legend"><span><b style="background:var(--emerald)"></b>خوانده‌شده</span><span><b style="background:#f6e3e3"></b>جامانده</span><span><b style="outline:2px solid var(--gold)"></b>امروز</span>${juz ? '<span>برای دیدن جزء هر روز، رویش بزنید</span>' : ''}</div>${juz ? `<div class="chl-gday" id="chlG${m.code}" aria-live="polite"></div>` : ''}`;
   }
+  function gridDay(el) {
+    const [code, iso, i] = el.dataset.gday.split('|'), m = mine.find(x => x.code === code), box = document.getElementById('chlG' + code);
+    if (!m || !box) return;
+    el.closest('.chl-grid').querySelectorAll('i.on').forEach(x => x.classList.remove('on')); el.classList.add('on');
+    const done = (m.marked || []).includes(iso), j = juzOn(m, +i), past = iso < today, from = fromDay(m);
+    const canLate = past && !done && iso >= from && iso >= isoAdd(today, -(typeof LATE_DAYS === 'number' ? LATE_DAYS : 1));
+    const st = done ? '✓ خوانده‌اید' : iso === today ? 'جزء امروز؛ هنوز ثبت نشده' : iso > today ? (iso === isoAdd(today, 1) ? 'جزء فردا' : 'هنوز نرسیده') : iso < from ? 'پیش از آمدن شما به گروه' : 'جامانده؛ ثبت نشده';
+    box.innerHTML = `<b>${esc(dateFa(iso))} · روز ${fa(i)}: جزء ${fa(j)}</b><span class="chl-gst">${st}</span><div class="reg-tools"><button type="button" class="reg-light" data-gread="${j}">${ICON_BOOK}خواندن جزء ${fa(j)}</button>${canLate ? `<button type="button" data-mark="${m.code}" data-day="${iso}">خواندم؛ ثبت این روز</button>` : ''}</div>`;
+  }
+  panel.addEventListener('click', e => { const g = e.target.closest('[data-gday]'); if (g) gridDay(g); });
+  panel.addEventListener('keydown', e => { const g = (e.key === 'Enter' || e.key === ' ') && e.target.closest?.('[data-gday]'); if (g) { e.preventDefault(); gridDay(g); } });
 
   function card(m) {
     const s = state(m), n = dayNo(m), done = new Set(m.marked || []), count = done.size, yesterday = isoAdd(today, -1);
@@ -711,6 +733,7 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
     const d = b.dataset;
     if (b.hasAttribute('data-new')) return window.siteMenu ? window.siteMenu.open() : null;
     if (d.read) return openReader(d.read, d.code ? mine.find(m => m.code === d.code) : null);
+    if (d.gread) return openQuran({ juz: +d.gread }, null);
     if (d.share !== undefined) return share(typeOf(d.share));
     if (d.again) return openSheet(d.again);
     if (d.forget) { codes.remove(d.forget); window.account?.unlink('chl', d.forget); mine = mine.filter(m => m.code !== d.forget); renderPanel(); return; }

@@ -299,7 +299,8 @@ body.qr-lock{overflow:hidden}
     }).join('');
     $('qrSub').textContent = current.range ? `${current.sub ? current.sub + ' · ' : ''}${toFa(count)} آیه` : `${typeof hizbLabel === 'function' && hizbLabel(current.index) ? `حزب ${toFa(current.index + 1)} · ` : ''}${toFa(count)} آیه`;
     const end = current.range ? `<p>${esc(current.endText || 'پایان. قبول باشد.')}</p>${current.onEnd ? `<button type="button" data-a="rangeEnd">${esc(current.endButton || 'خواندم')}</button>` : ''}${current.note ? `<p class="qr-note">${esc(current.note)}</p>` : ''}`
-      : '<p>پایان سهم امروز. قبول باشد.</p><button type="button" data-a="report">قرائت کردم؛ ثبت گزارش</button>';
+      // سهم روز دیگری از تقویم سهم‌ها (hezb-days.js): day تاریخ آن روز، dayName نامش و canReport اینکه هنوز گزارشش ثبت‌شدنی است.
+      : `<p>پایان سهم ${current.dayName ? esc(current.dayName) : 'امروز'}. قبول باشد.</p>${current.canReport === false ? '' : '<button type="button" data-a="report">قرائت کردم؛ ثبت گزارش</button>'}`;
     const nv = current.nav, navHtml = !nv ? '' : `<div class="qr-pnav">${nv.prev ? `<button type="button" data-a="pprev">→ ${esc(nv.prev)}</button>` : '<span></span>'}${nv.menu ? `<button type="button" class="qr-pmenu" data-a="pmenu">${esc(nv.menu)}</button>` : ''}${nv.next ? `<button type="button" data-a="pnext">${esc(nv.next)} ←</button>` : '<span></span>'}</div>`;
     body.innerHTML = navHtml + html + `<div class="qr-end">${end}${navHtml}
 <p class="qr-src">متن عربی: مصحف مجمع ملک فهد (روایت حفص) · ترجمه: <span id="qrTrSrc">آیت‌الله مکارم شیرازی</span> (Tanzil.net) · تفسیر: quran.makarem.ir و تفسیر نور (Furqan Apps)<span class="qr-xi"> · صوت: everyayah.com، quran.com و alquran.cloud · ترجمه ریاعی و صدای بهروز رضوی: quranmehr.ir (موسسه پیامبر مهر و رحمت) · تحدیر معتز آقایی: archive.org</span></p></div>`;
@@ -585,11 +586,11 @@ body.qr-lock{overflow:hidden}
     if (a === 'prev') return playAt(Math.max(0, pos - 1));
     if (a === 'ayah') return playAt(items.findIndex(it => it.e === b.closest('.qr-ayah')));
     if (a === 'report') {
-      const id = current.id;
+      const id = current.id, day = current.day;
       return close(false, () => {
         if (!window.reportId || typeof window.verifyReportIdentity !== 'function') return;
         reportId.value = toFa(id);
-        verifyReportIdentity();
+        verifyReportIdentity(day);
         reportId.closest('.panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
@@ -783,6 +784,8 @@ body.qr-lock{overflow:hidden}
   window.quranReader = {
     openRange(o) { open({ title: o.title, sub: o.sub || '', range: { from: o.from, to: o.to }, endText: o.endText, endButton: o.endButton, onEnd: o.onEnd, note: o.note, focus: o.focus, onView: o.onView, nav: o.nav, autoplay: o.autoplay }); },
     index: getIndex,
+    // سهم یک روز حزب‌خوانی: { index, id, title, day?, dayName?, canReport? }
+    openTask: t => open(t),
     // برای افزونه‌ها (qr-plus.js): hooks.render(items) پس از ساختن آیه‌ها، hooks.next(pos) در پایان هر آیه، hooks.hold(pos) یعنی پخش پیوسته فایل بلند به آیه بعد نرود.
     hooks: {}, el, audio, items: () => items, task: () => current, state: () => ({ pos, playing }),
     playAt, pause: pauseAudio, setNow, label, openTafsir, extras, flow: () => !prefs.trans,
