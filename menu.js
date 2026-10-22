@@ -74,7 +74,9 @@ body.sm-lock{overflow:hidden}
     const links = LINKS.filter(([id]) => id === 'registerPanel' ? !hezbListed && (window.regHasOpen || visible(document.getElementById(id))) : document.getElementById(id));
     if (links.length) {
       const box = document.createElement('div'); box.className = 'sm-sec';
-      box.innerHTML = '<h3>حزب‌خوانی قرآن</h3>' + links.map(([id, ic, t, s]) => `<button type="button" class="sm-item" data-sm-to="${id}"><span class="sm-ic">${ic}</span><span>${t}${s ? `<small>${s}</small>` : ''}</span><span class="sm-go">‹</span></button>`).join('');
+      // «سهم روزهای دیگر» (hezb-days.js) پس از «سهم امروز من»، وقتی گروه و شناسه روی این گوشی ذخیره شده است.
+      const days = window.hezbDays?.can() ? '<button type="button" class="sm-item" data-hd-menu><span class="sm-ic">🗓️</span><span>سهم روزهای دیگر<small>تقویم سهم هر روز و گزارش‌های ثبت‌شده</small></span><span class="sm-go">‹</span></button>' : '';
+      box.innerHTML = '<h3>حزب‌خوانی قرآن</h3>' + links.map(([id, ic, t, s]) => `<button type="button" class="sm-item" data-sm-to="${id}"><span class="sm-ic">${ic}</span><span>${t}${s ? `<small>${s}</small>` : ''}</span><span class="sm-go">‹</span></button>${id === 'pid' ? days : ''}`).join('');
       body.appendChild(box);
     }
     body.appendChild(tail);
@@ -126,6 +128,7 @@ body.sm-lock{overflow:hidden}
   shade.onclick = () => close();
   nav.addEventListener('click', e => {
     if (e.target.closest('[data-sm-close]')) return close();
+    if (e.target.closest('[data-hd-menu]')) { close(); setTimeout(() => window.hezbDays?.open(), 280); return; }
     const to = e.target.closest('[data-sm-to]');
     if (to) {
       close();
