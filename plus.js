@@ -94,10 +94,10 @@ html[data-theme=dark] #dlCard .px-mh{background:#16110f}
         }
         html += `<div class="px-mh"><p>${esc(head)}${sub ? `<small>${esc(sub)}</small>` : ''}</p>${rows.slice(0, 2).join('')}</div>`;
       }
-      // روزهای مانده تا مناسبت‌ها (تعطیل‌های رسمی مذهبی؛ دو مورد پیش رو در ۹۰ روز آینده)
+      // روزهای مانده تا مناسبت‌ها (تعطیل‌های رسمی مذهبی؛ دو مورد پیش رو، فقط از هفت روز پیش از آن)
       if (shown('countdown')) {
         const out = [];
-        for (let i = 1; i <= 90 && out.length < 2; i++) { const t = holidays(D.addDays(iso, i)); if (t.length && !(arb && /اربعین/.test(t[0]))) out.push(`<li><b>${toFa(i)}</b> ${i === 1 ? 'روز، فردا' : 'روز'} تا ${esc(t[0].split('؛')[0])}</li>`); }
+        for (let i = 1; i <= 7 && out.length < 2; i++) { const t = holidays(D.addDays(iso, i)); if (t.length && !(arb && /اربعین/.test(t[0]))) out.push(`<li><b>${toFa(i)}</b> ${i === 1 ? 'روز، فردا' : 'روز'} تا ${esc(t[0].split('؛')[0])}</li>`); }
         if (out.length) html += `<ul class="px-cd" aria-label="روزهای مانده تا مناسبت‌ها">${out.join('')}</ul>`;
       }
       const rows = [];
