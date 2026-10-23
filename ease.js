@@ -100,14 +100,16 @@
 
   // ---------- ۲. «اخیراً» در منو (recent) ----------
   const REC = 'menuRecent';
-  const attrs = el => Object.fromEntries([...el.attributes].filter(a => a.name.startsWith('data-')).map(a => [a.name, a.value]));
+  const attrs = el => Object.fromEntries([...el.attributes].filter(a => /^data-[a-z0-9-]+$/.test(a.name)).map(a => [a.name, a.value]));
   const selOf = a => Object.entries(a).map(([k, v]) => `[${k}="${CSS.escape(v)}"]`).join('');
   const smBody = () => document.querySelector('.sm-body');
+  // فقط نام ویژگی‌های data- ذخیره می‌شود؛ متن هر گزینه هر بار از خود منو برداشته می‌شود، نه از حافظه مرورگر.
+  const okRec = x => x && x.a && typeof x.a === 'object' && Object.entries(x.a).every(([k, v]) => /^data-[a-z0-9-]+$/.test(k) && typeof v === 'string');
   document.addEventListener('click', e => {
     const it = e.target.closest?.('.sm .sm-item'); if (!it || it.closest('.ez-recent')) return;
     const a = attrs(it); if (!Object.keys(a).length) return;
-    const h = it.innerHTML, list = read(REC, []).filter(x => selOf(x.a) !== selOf(a));
-    list.unshift({ a, h }); write(REC, list.slice(0, 4));
+    const list = read(REC, []).filter(x => okRec(x) && selOf(x.a) !== selOf(a));
+    list.unshift({ a }); write(REC, list.slice(0, 4));
   }, true);
   // باز بودن «اخیراً» فقط تا بسته شدن همین منو می‌ماند؛ بار بعد دوباره جمع‌شده است.
   let recOpen = false;
@@ -117,13 +119,16 @@
     if (!on('recent') || !document.querySelector('.sm.show')) return;
     // فقط گزینه‌هایی که هنوز در منو هستند (امکانی که خاموش شده یا ثبت‌نامی که بسته شده، خودش کنار می‌رود)،
     // و فقط آن‌هایی که داخل یک دسته جمع‌شدنی‌اند؛ گزینه تک‌بخشی که همیشه بالای منو دیده می‌شود دوباره نمی‌آید.
-    const list = read(REC, []).filter(x => x && x.a && [...body.querySelectorAll(selOf(x.a))].some(n => n.closest('.sm-grp-body')));
+    const list = read(REC, []).filter(okRec).map(x => ({ a: x.a, n: [...body.querySelectorAll(selOf(x.a))].find(n => n.closest('.sm-grp-body')) })).filter(x => x.n);
     if (!list.length) return;
     const box = document.createElement('div'); box.className = 'ez-recent';
     box.innerHTML = `<button type="button" class="sm-grp" aria-expanded="${recOpen}"><b>🕘 اخیراً</b><small>${fa(list.length)}</small><i>▾</i></button><div class="ez-rbody"${recOpen ? '' : ' hidden'}>`
-      + list.map((x, i) => `<button type="button" class="sm-item" data-ez-rec="${i}">${x.h}</button>`).join('') + '</div>';
-    // متن ذخیره‌شده خود منو بوده، ولی برای اطمینان فقط ساختار ساده‌اش (آیکون، عنوان، توضیح) نگه داشته می‌شود
-    box.querySelectorAll('[data-ez-rec]').forEach(b => b.querySelectorAll('script,iframe,img,svg,input,button').forEach(n => n.remove()));
+      + list.map((x, i) => `<button type="button" class="sm-item" data-ez-rec="${i}"></button>`).join('') + '</div>';
+    // فقط ساختار ساده گزینه (آیکون، عنوان، توضیح) کپی می‌شود
+    box.querySelectorAll('[data-ez-rec]').forEach((b, i) => {
+      [...list[i].n.childNodes].forEach(c => b.appendChild(c.cloneNode(true)));
+      b.querySelectorAll('script,iframe,img,svg,input,button').forEach(n => n.remove());
+    });
     box.addEventListener('click', e => {
       const g = e.target.closest('.sm-grp');
       if (g) {

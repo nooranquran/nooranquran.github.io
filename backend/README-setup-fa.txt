@@ -139,3 +139,10 @@
     هر بازدیدکننده هم می‌تواند ختم خودش را بسازد (حداکثر ۳ در روز از هر گوشی) که فقط با پیوندش باز می‌شود.
 30) نمودارهای مدیریت (‎/#admin‎ › گزارش‌ها › «آمار و نمودارها»): یک بار فایل dashboard.sql را اجرا کنید (پس از schema.sql،
     registration.sql، update-day-start-azan.sql و در صورت وجود chelleh.sql و reminders.sql). فقط مدیر نتیجه را می‌بیند.
+
+امنیت و جلوگیری از سایت‌های جعلی (SECURITY.md)
+31) security-hardening.sql و سپس origin-guard.sql را در SQL Editor اجرا کنید. origin-guard.sql پایگاه داده را فقط برای صفحه‌هایی باز می‌گذارد
+    که روی https://nooranquran.github.io (یا localhost برای آزمایش) باز شده‌اند. اگر نشانی سایت روزی عوض شد، نشانی تازه را در این فایل
+    و در ORIGINS دو تابع account-login و daily-reminders بگذارید، وگرنه سایت تازه به پایگاه داده دسترسی ندارد. راه برگرداندن در خود فایل نوشته شده.
+32) Authentication › URL Configuration: در Site URL فقط https://nooranquran.github.io و در Redirect URLs فقط https://nooranquran.github.io/**
+    باشد تا لینک‌های ایمیل (تأیید حساب، رمز تازه) هرگز به نشانی دیگری برنگردند.
