@@ -166,6 +166,7 @@
 
   window.tour = {
     start,
+    skipOnce() { skip = true; },
     // دکمه منو برای بخش «تنظیمات» (reminders.js)
     menuItem() {
       if (!on()) return '';
@@ -176,9 +177,10 @@
 
   // بار اول: فقط روی صفحه اول ساده (نه پیوند مستقیم به یک بخش، نه ‎#admin‎)، پس از نشستن کادرهای صفحه،
   // و وقتی کاربر چیزی (منو، خواننده یا برگه‌ای) باز نکرده است؛ اگر سرش گرم است، بار بعد.
+  let skip = false; // در این بازدید خودکار باز نشود (مثلاً آمدن از لینک ثبت‌نام چله)
   function auto(tries = 0) {
     try { if (localStorage.getItem(SEEN)) return; } catch { return; }
-    if (location.search || location.hash || !on()) return;
+    if (location.search || location.hash || skip || !on()) return;
     // کادرهای صفحه اول با حرکت وارد می‌شوند (backdrop.js)؛ تا آن‌هایی که در دیدند ننشسته‌اند صبر می‌کند.
     const arriving = [...document.querySelectorAll('.bgx-in:not(.bgx-done)')].some(el => { const r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; });
     const busy = arriving || document.body.matches('.sm-lock,.ib-lock') || document.querySelector('.sm.show') || [...document.querySelectorAll('[role=dialog]')].some(vis);
