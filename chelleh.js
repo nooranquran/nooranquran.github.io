@@ -241,6 +241,14 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
 .chl-adm .chl-card h3{font:700 18px/1.6 Vazirmatn,Tahoma,sans-serif}
 .chl-adm .adm-card .hint,body.v2 #pane-chl .hint{color:var(--muted)}
 .chl-adm h4{margin:18px 0 6px;font-size:17px;color:#fff;text-shadow:var(--glow)}
+.chl-sum{display:grid;gap:0;border:1px solid var(--line);border-radius:var(--r);margin-top:8px;overflow:hidden}
+#chlSignups .chl-sum button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;height:auto;min-height:42px;padding:6px 10px;border:0;border-bottom:1px solid #f0e8d6;border-radius:0;background:#fff;color:#2b2118;font-size:15px;font-weight:500;text-align:start;box-shadow:none}
+#chlSignups .chl-sum button:hover{background:#f6efe0}
+#chlSignups .chl-sum b{flex:none;color:#1f5a3a}
+.chl-adm .chl-card{scroll-margin-top:120px}
+.chl-total{margin:2px 0 0;font-size:17px;color:var(--deep)}
+.chl-names{margin:8px 0 0;font-size:14.5px;line-height:1.9;color:var(--ink)}
+.chl-names small{color:var(--muted)}
 .chl-members{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);margin-top:8px}
 .chl-members div{display:flex;gap:8px;align-items:center;padding:5px 8px;border-bottom:1px solid #f0e8d6}
 .chl-members span{flex:1;min-width:0;overflow-wrap:anywhere}
@@ -946,7 +954,8 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
   function buildAdmin() {
     pane = document.getElementById('pane-chl'); if (!pane || pane.dataset.built) return;
     pane.dataset.built = 1; pane.classList.add('chl-adm');
-    pane.innerHTML = `<div class="adm-card"><h3>منوی ثبت‌نام چله</h3>
+    pane.innerHTML = `<div class="adm-card" id="chlSignups"><h3>ثبت‌نام‌ها</h3><p class="hint">در حال دریافت…</p></div>
+<div class="adm-card"><h3>منوی ثبت‌نام چله</h3>
 <p class="hint">این‌ها در منوی سه‌خط بالای سایت دیده می‌شوند. برای هر کدام تعیین کنید چند روز است و هر دوره چند نفر؛ «همیشه باز» یعنی هر کس از روز ثبت‌نام چله خودش را شروع می‌کند. در حالت دوره‌ای، با کامل شدن ظرفیت، دوره خودکار شروع و دوره بعد باز می‌شود.</p>
 <div id="chlTypes"><p class="hint">در حال دریافت…</p></div>
 <div class="chl-tools"><button type="button" id="chlTypeNew">+ افزودن چله تازه به منو</button></div><div class="adm-msg" id="chlTypeMsg"></div></div>
@@ -985,6 +994,15 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
     $a('#chlTextPreview').onclick = () => { const t = formText(); if (!t.sections.length) return tmsg('متن خالی است.'); textCache.__preview = t; openReader('__preview'); };
     $a('#chlTextReset').onclick = resetText;
     pane.addEventListener('click', onAdminClick);
+    $a('#chlSignups').addEventListener('click', e => {
+      const b = e.target.closest('[data-goround]'); if (!b) return;
+      const id = +b.dataset.goround, r = adminRounds.find(x => x.id === id);
+      // دوره را در فهرست پایین نشان می‌دهد (اگر فیلتر یا بایگانی پنهانش کرده باشد) و نام‌ها را باز می‌کند.
+      if (roundFilter && r.type_key !== roundFilter) { roundFilter = ''; $a('#chlRoundFilter').value = ''; }
+      if (r.status === 'closed') $a('#chlShowClosed').checked = true;
+      openRound = id; renderRounds();
+      const card = $a('#chlA' + id); if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash'); }
+    });
   }
   const msgTo = (id, t, ok) => { const m = $a('#' + id); if (!m) return; m.className = 'adm-msg ' + (ok ? 'adm-ok' : 'adm-bad'); m.textContent = t; };
   const amsg = (t, ok) => msgTo('chlAdminMsg', t, ok), tmsg = (t, ok) => msgTo('chlTextMsg', t, ok), ymsg = (t, ok) => msgTo('chlTypeMsg', t, ok);
@@ -997,11 +1015,17 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
     try {
       [adminTypes, adminRounds] = await Promise.all([
         api('chelleh_types?select=*&order=sort,created_at', { auth: true }),
-        api('chelleh_rounds?select=*,chelleh_members(count)&order=id.desc', { auth: true })
+        api('chelleh_rounds?select=*,chelleh_members(name,slot,reserve,created_at)&order=id.desc', { auth: true })
       ]);
     } catch (e) {
-      $a('#chlTypes').innerHTML = `<p class="adm-bad">${esc(e.message)}</p>`; $a('#chlAdminRounds').innerHTML = ''; return;
+      $a('#chlTypes').innerHTML = `<p class="adm-bad">${esc(e.message)}</p>`; $a('#chlAdminRounds').innerHTML = ''; $a('#chlSignups').innerHTML = `<h3>ثبت‌نام‌ها</h3><p class="adm-bad">${esc(e.message)}</p>`; return;
     }
+    // نام‌ها به ترتیب جایگاه (و برای دوره‌های بی‌جایگاه به ترتیب ثبت‌نام)؛ رزروها جدا.
+    adminRounds.forEach(r => {
+      const all = (r.chelleh_members || []).slice().sort((a, b) => (a.slot || 1e9) - (b.slot || 1e9) || String(a.created_at).localeCompare(String(b.created_at)));
+      r._main = all.filter(m => !m.reserve); r._res = all.filter(m => m.reserve);
+    });
+    renderSignups();
     const tOpts = adminTypes.map(t => `<option value="${esc(t.key)}">${esc(t.title)}</option>`).join('');
     $a('#chlNrType').innerHTML = adminTypes.filter(t => t.kind !== 'hezb').map(t => `<option value="${esc(t.key)}">${esc(t.title)}</option>`).join(''); $a('#chlNrType').onchange?.({ target: $a('#chlNrType') });
     $a('#chlRoundFilter').innerHTML = '<option value="">همه چله‌ها</option>' + tOpts + (adminRounds.some(r => !r.type_key) ? '<option value="-">بدون نوع (قدیمی)</option>' : '');
@@ -1087,8 +1111,19 @@ ${t ? '<p class="hint">تغییرها روی دوره‌هایی که هنوز �
   }
 
   // دوره‌ها
+  const roundName = r => `${r.title}${r.personal ? '' : ` · دوره ${fa(r.number)}`}`;
+  // خلاصه بالای زبانه: چند نفر در هر دوره باز ثبت‌نام کرده‌اند؛ با زدن هر سطر، نام‌ها باز می‌شود.
+  function renderSignups() {
+    const open = adminRounds.filter(r => r.status !== 'closed').sort((a, b) => b._main.length - a._main.length || a.id - b.id);
+    const total = open.reduce((n, r) => n + r._main.length, 0), res = open.reduce((n, r) => n + r._res.length, 0);
+    const rows = open.map(r => `<button type="button" data-goround="${r.id}"><span>${esc(roundName(r))}</span><b>${fa(r._main.length)} نفر${r.capacity ? ` از ${fa(r.capacity)}` : ''}${r._res.length ? ` + ${fa(r._res.length)} رزرو` : ''}</b></button>`).join('');
+    $a('#chlSignups').innerHTML = `<h3>ثبت‌نام‌ها</h3>
+<p class="chl-total"><b>${fa(total)} ثبت‌نام</b> در ${fa(open.length)} دوره باز${res ? `، و ${fa(res)} نفر در فهرست رزرو` : ''}</p>
+<p class="hint" style="margin:2px 0 0">کسی که در چند چله ثبت‌نام کرده، در هر کدام یک بار شمرده می‌شود. روی هر دوره بزنید تا فهرست کامل نام‌ها باز شود. ثبت‌نام گروه‌های حزب‌خوانی در زبانه «ثبت‌نام» است.</p>
+${rows ? `<div class="chl-sum">${rows}</div>` : '<p class="hint">دوره بازی نیست.</p>'}`;
+  }
   function roundState(r) {
-    const count = r.chelleh_members?.[0]?.count ?? 0;
+    const count = r._main.length;
     if (r.status === 'closed') return ['بایگانی', count];
     if (r.personal) return [r.joinable ? 'همیشه باز (شروع هر نفر جداست)' : 'همیشه باز، ثبت‌نام تازه بسته', count];
     if (!r.start_date) return [`در حال ثبت‌نام: ${fa(count)}${r.capacity ? ' از ' + fa(r.capacity) : ''} نفر`, count];
@@ -1104,9 +1139,11 @@ ${t ? '<p class="hint">تغییرها روی دوره‌هایی که هنوز �
   function roundCard(r) {
     const [st, count] = roundState(r), end = r.start_date ? isoAdd(r.start_date, r.days - 1) : null;
     const waiting = !r.personal && !r.start_date && r.status === 'open';
-    return `<div class="chl-card${r.status === 'closed' ? ' chl-off' : ''}" id="chlA${r.id}"><h3>${esc(r.title)}${r.personal ? '' : ` · دوره ${fa(r.number)}`}</h3><div class="chl-meta"><span class="chl-tag${waiting ? ' wait' : ''}">${esc(st)}</span></div>
+    const names = r._main.map((m, i) => `${fa(m.slot || i + 1)}. ${esc(m.name)}`).join('، ');
+    return `<div class="chl-card${r.status === 'closed' ? ' chl-off' : ''}" id="chlA${r.id}"><h3>${esc(roundName(r))}</h3><div class="chl-meta"><span class="chl-tag${waiting ? ' wait' : ''}">${esc(st)}</span>${waiting ? '' : `<span class="chl-tag">${fa(count)} نفر ثبت‌نام کرده‌اند${r.capacity ? ` (از ${fa(r.capacity)})` : ''}</span>`}${r._res.length ? `<span class="chl-tag wait">${fa(r._res.length)} رزرو</span>` : ''}</div>
 ${r.start_date && !r.personal ? `<p class="hint" style="margin:4px 0 0">از ${esc(dateFa(r.start_date))} تا ${esc(dateFa(end))}${r.joinable ? '' : '، ثبت‌نام بسته'}</p>` : ''}
-<div class="chl-tools"><button type="button" data-members="${r.id}">شرکت‌کنندگان</button>${waiting && count ? `<button type="button" class="reg-light" data-startnow="${r.id}">شروع از امروز</button>` : ''}${!r.personal && r.status === 'open' ? `<button type="button" class="reg-light" data-joinable="${r.id}">${r.joinable ? 'بستن ثبت‌نام' : 'باز کردن ثبت‌نام'}</button>` : ''}<button type="button" class="reg-light" data-status="${r.id}">${r.status === 'open' ? 'بایگانی' : 'بازگرداندن'}</button><button type="button" class="reg-danger" data-delround="${r.id}">حذف</button></div>
+${openRound === r.id ? '' : `<p class="chl-names">${names || '<small>هنوز کسی ثبت‌نام نکرده است.</small>'}</p>`}
+<div class="chl-tools"><button type="button" data-members="${r.id}">${openRound === r.id ? 'بستن جزئیات' : 'جزئیات شرکت‌کنندگان'}</button>${waiting && count ? `<button type="button" class="reg-light" data-startnow="${r.id}">شروع از امروز</button>` : ''}${!r.personal && r.status === 'open' ? `<button type="button" class="reg-light" data-joinable="${r.id}">${r.joinable ? 'بستن ثبت‌نام' : 'باز کردن ثبت‌نام'}</button>` : ''}<button type="button" class="reg-light" data-status="${r.id}">${r.status === 'open' ? 'بایگانی' : 'بازگرداندن'}</button><button type="button" class="reg-danger" data-delround="${r.id}">حذف</button></div>
 <div id="chlMem${r.id}"></div></div>`;
   }
   async function newRound() {
@@ -1195,7 +1232,7 @@ ${r.status === 'open' ? `<div class="row" style="margin-top:8px"><input id="chlA
       const r = adminRounds.find(x => x.id === +(d.members || d.startnow || d.joinable || d.status || d.delround || d.addmem || d.copy || d.news || d.mails));
       if (d.news) { const v = $a('#chlNews' + r.id).value.trim(); await api(`chelleh_rounds?id=eq.${r.id}`, { method: 'PATCH', body: { news: v }, auth: true, prefer: 'return=minimal' }); await loadAdmin(); msgTo('chlMemMsg' + r.id, v ? 'خبر ذخیره شد و روی کارت شرکت‌کنندگان دیده می‌شود.' : 'خبر پاک شد.', true); return; }
       if (d.mails) return copy(($a('#chlMem' + r.id)._mails || []).join(', '), 'chlMemMsg' + r.id);
-      if (d.members) { const box = $a('#chlMem' + r.id); if (openRound === r.id && box.innerHTML) { openRound = null; box.innerHTML = ''; } else showMembers(r.id); return; }
+      if (d.members) { openRound = openRound === r.id ? null : r.id; renderRounds(); return; }
       if (d.startnow) {
         if (!confirm(`«${r.title}، دوره ${fa(r.number)}» از امروز شروع شود؟ ثبت‌نام این دوره بسته می‌شود.`)) return;
         await rpc('chl_admin_start', { p_round: r.id }, true); await loadAdmin(); refresh(); return;
