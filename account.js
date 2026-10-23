@@ -202,12 +202,14 @@ body.acs-lock{overflow:hidden}
   const top = t => `<div class="acs-top"><h2>${t}</h2><button type="button" data-close aria-label="بستن">✕</button></div>`;
   const pass = (id, label, ac) => `<label for="${id}">${label}</label><div class="acs-pass"><input id="${id}" type="password" dir="ltr" maxlength="72" autocomplete="${ac}"><button type="button" data-show="${id}">نمایش</button></div>`;
   const noteBox = () => (note ? `<div class="acs-note">${esc(note)}</div>` : '');
+  // نشانی رسمی کنار هر جای رمز: کپی‌های جعلی سایت هم همین ظاهر را دارند و تنها فرقشان نشانی است.
+  const safe = () => '<p class="chl-note" style="color:var(--muted);font-size:14px">🔒 رمز را فقط در نشانی <b dir="ltr">nooranquran.github.io</b> وارد کنید. نوران هیچ‌وقت رمز یا کد شما را در پیام یا تلفن نمی‌خواهد.</p>';
   function draw(extra) {
     const box = sheet.querySelector('.acs-in'), p = read(PKEY, {}) || {}, linked = read(LKEY, {}) || {};
     if (mode === 'login') {
       box.innerHTML = top('ورود به حساب') + noteBox() + `
 <label for="acsId">ایمیل یا نام کاربری</label><input id="acsId" dir="ltr" maxlength="120" autocomplete="username" autocapitalize="off" spellcheck="false" value="${esc(prefill.email || read('accLastId', ''))}">
-${pass('acsPass', 'رمز', 'current-password')}
+${pass('acsPass', 'رمز', 'current-password')}${safe()}
 <button type="button" class="acs-main" data-do="login">ورود</button><div class="acs-msg" id="acsMsg"></div>
 <div class="acs-links"><button type="button" class="acs-link" data-mode="forgot">رمز را فراموش کرده‌ام</button><button type="button" class="acs-link" data-mode="signup">حساب ندارم، می‌خواهم بسازم</button></div>`;
     } else if (mode === 'signup') {
@@ -217,7 +219,7 @@ ${pass('acsPass', 'رمز', 'current-password')}
 <label for="acsUser">نام کاربری <small>(انگلیسی، برای ورود)</small></label><input id="acsUser" dir="ltr" maxlength="30" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="مثلاً fatemeh_rezaei">
 <label for="acsEmail">ایمیل <small>(برای تأیید حساب و فراموشی رمز)</small></label><input id="acsEmail" type="email" inputmode="email" dir="ltr" maxlength="120" autocomplete="email" value="${esc(prefill.email || read('chlEmail', ''))}" placeholder="name@example.com">
 <p class="chl-note" style="color:var(--muted);font-size:14px">اگر در چله‌ای با ایمیل ثبت‌نام کرده‌اید، همان ایمیل را بنویسید تا آن چله‌ها خودکار به حسابتان اضافه شوند.</p>
-${pass('acsPass', `رمز <small>(دست‌کم ${fa(MIN_PASS)} حرف)</small>`, 'new-password')}
+${pass('acsPass', `رمز <small>(دست‌کم ${fa(MIN_PASS)} حرف)</small>`, 'new-password')}${safe()}
 <button type="button" class="acs-main" data-do="signup">ساخت حساب</button><div class="acs-msg" id="acsMsg"></div>
 <div class="acs-links"><button type="button" class="acs-link" data-mode="login">حساب دارم، می‌خواهم وارد شوم</button></div>`;
     } else if (mode === 'sent') {
@@ -230,7 +232,7 @@ ${extra?.email ? `<button type="button" class="acs-alt" data-do="resend" data-em
 <button type="button" class="acs-main" data-do="forgot">فرستادن لینک</button><div class="acs-msg" id="acsMsg"></div>
 <div class="acs-links"><button type="button" class="acs-link" data-mode="login">بازگشت به ورود</button></div>`;
     } else if (mode === 'newpass') {
-      box.innerHTML = top('رمز تازه') + `<p>رمز تازه حساب خود را بنویسید.</p>${pass('acsPass', `رمز تازه <small>(دست‌کم ${fa(MIN_PASS)} حرف)</small>`, 'new-password')}
+      box.innerHTML = top('رمز تازه') + `<p>رمز تازه حساب خود را بنویسید.</p>${pass('acsPass', `رمز تازه <small>(دست‌کم ${fa(MIN_PASS)} حرف)</small>`, 'new-password')}${safe()}
 <button type="button" class="acs-main" data-do="newpass">ذخیره رمز تازه</button><div class="acs-msg" id="acsMsg"></div>`;
     } else if (mode === 'edit') {
       box.innerHTML = top('ویرایش حساب') + `<label for="acsName">نام و نام خانوادگی</label><input id="acsName" maxlength="60" value="${esc(p.name || '')}">
@@ -295,7 +297,7 @@ ${extra?.email ? `<button type="button" class="acs-alt" data-do="resend" data-em
       if (password.length < MIN_PASS || /^\d+$/.test(password)) return say(ERRS.weak_password);
       if (!(await window.sbRpc('acc_username_free', { p_username: username }))) return say(window.sbErrors.acc_username_taken);
       const d = await auth('signup', { query: `?redirect_to=${encodeURIComponent(siteUrl())}`, body: { email, password, data: { name, username } } });
-      write('accLastId', email); write('chlName', read('chlName', '') || name);
+      write('accLastId', email); write('chlName', read('chlName', '') || name); pending(email);
       if (d.access_token) return loggedIn(d, 'حساب شما ساخته شد و وارد شدید.');
       // Supabase برای ایمیلی که قبلاً حساب دارد هم همین پاسخ را می‌دهد (بدون identities) تا ایمیل‌ها معلوم نشوند.
       const exists = Array.isArray(d.identities) && d.identities.length === 0;
@@ -303,12 +305,14 @@ ${extra?.email ? `<button type="button" class="acs-alt" data-do="resend" data-em
     });
     if (act === 'resend') return busy(b, 'در حال فرستادن…', async () => {
       await auth('resend', { query: `?redirect_to=${encodeURIComponent(siteUrl())}`, body: { type: 'signup', email: b.dataset.email } });
+      pending(b.dataset.email);
       say('دوباره فرستاده شد.', true);
     });
     if (act === 'forgot') return busy(b, 'در حال فرستادن…', async () => {
       const email = latin(val('acsEmail')).toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return say(ERRS.email_address_invalid);
       await auth('recover', { query: `?redirect_to=${encodeURIComponent(siteUrl())}`, body: { email } });
+      pending(email);
       mode = 'sent'; draw({ title: 'ایمیل را ببینید', text: `اگر با ${email} حسابی ساخته شده باشد، لینک ساختن رمز تازه به آن فرستاده شد.` });
     });
     if (act === 'newpass') return busy(b, 'در حال ذخیره…', async () => {
@@ -344,6 +348,14 @@ ${extra?.email ? `<button type="button" class="acs-alt" data-do="resend" data-em
   }
 
   // ---------- برگشت از لینک ایمیل (تأیید حساب یا رمز تازه) ----------
+  // هر کس می‌تواند پیوندی با #access_token حساب خودش بسازد و برای دیگری بفرستد؛ اگر بی‌پرسش وارد شویم، کدهای چله و ثبت‌نام
+  // این گوشی به حساب او وصل می‌شود. پس فقط وقتی بی‌پرسش وارد می‌شویم که همین گوشی در ۳ روز گذشته برای همین ایمیل لینک خواسته باشد.
+  const PEND = 'accPending';
+  function pending(email) { write(PEND, { e: String(email || '').toLowerCase(), t: Date.now() }); }
+  function expected(email) {
+    const p = read(PEND, null);
+    return !!(p && p.e && p.e === String(email || '').toLowerCase() && Date.now() - p.t < 3 * 864e5);
+  }
   async function fromLink() {
     const h = location.hash.slice(1);
     if (!/(^|&)(access_token|error_code|error)=/.test(h)) return;
@@ -352,6 +364,8 @@ ${extra?.email ? `<button type="button" class="acs-alt" data-do="resend" data-em
     if (q.get('error') || q.get('error_code')) { open('login', { note: ERRS[q.get('error_code')] || ERRS.otp_expired }); return; }
     const d = { access_token: q.get('access_token'), refresh_token: q.get('refresh_token'), expires_at: +q.get('expires_at') || 0, expires_in: +q.get('expires_in') || 3600 };
     try { d.user = await auth('user', { method: 'GET', token: d.access_token }); } catch (e) { open('login', { note: e.message }); return; }
+    if (!expected(d.user?.email) && !confirm(`ورود با حساب ${d.user?.email || ''} انجام شود؟\n\nاگر این ایمیل شما نیست، «لغو» را بزنید؛ کسی ممکن است این پیوند را برای دسترسی به اطلاعات شما فرستاده باشد.`)) return;
+    write(PEND, null);
     session.save(toSession(d));
     if (q.get('type') === 'recovery') { open('newpass'); return; }
     await sync();

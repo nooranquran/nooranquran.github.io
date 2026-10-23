@@ -19,6 +19,10 @@ const env = (k: string) => Deno.env.get(k) || ''
 const SITE_URL = (env('SITE_URL') || 'https://nooranquran.github.io').replace(/\/$/, '')
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 const json = (x: unknown, status = 200) => new Response(JSON.stringify(x), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
+// فقط سایت رسمی (و آزمایش روی همین کامپیوتر) می‌تواند از مرورگر این تابع را صدا بزند؛ کپی سایت روی نشانی دیگر رد می‌شود.
+// مرورگر Origin را خودش می‌گذارد و صفحه نمی‌تواند عوضش کند. درخواست بی‌Origin (Cron، سرور) مثل قبل پذیرفته می‌شود.
+const ORIGINS = ['https://nooranquran.github.io', 'https://hezbkhani.github.io']
+const originOk = (o: string | null) => o === null || ORIGINS.includes(o) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(o)
 
 const makeDb = () => createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } })
 type Db = ReturnType<typeof makeDb>
@@ -115,6 +119,7 @@ async function personalAzan(db: Db, stats: Stats) {
 Deno.serve(req => handle(req).catch(e => { console.error(e); return json({ error: String((e as Error).message || e) }, 500) }))
 
 async function handle(req: Request): Promise<Response> {
+  if (!originOk(req.headers.get('origin'))) return json({ error: 'origin_not_allowed' }, 403)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const slot = new URL(req.url).searchParams.get('slot') || ''
   if (!['auto', 'azan', 'morning', 'evening', 'test', 'sample', 'broadcast'].includes(slot)) return json({ error: 'bad_slot' }, 400)
