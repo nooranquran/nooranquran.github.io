@@ -157,6 +157,8 @@
 .chs-top{display:flex;align-items:flex-start;gap:8px}
 .chs-top h2{flex:1;margin:4px 0 0;font:normal 34px/1.6 SiteFont,Tahoma,serif;color:var(--deep)}
 .chs-top button{flex:none;width:42px;height:42px;padding:0;background:transparent;border:0;color:var(--muted);font-size:24px}
+.chs-top .chs-link{color:var(--deep)}.chs-top .chs-link svg{width:22px;height:22px;vertical-align:middle}
+.chl-reglink{margin-top:8px}.chl-reglink input{flex:1;min-width:0;font-size:13px;color:var(--muted)}
 .chs-facts{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
 .chs-facts span{padding:2px 10px;background:var(--mint);border:1px solid #cfe3da;color:var(--deep);font-size:14px;font-weight:600;border-radius:var(--pill)}
 .chs-state{background:#fff;border:1px solid var(--gold);border-radius:var(--r-card);padding:10px 14px;margin:10px 0;font-size:15.5px}
@@ -478,8 +480,9 @@ ${open.length ? `<div class="chs-state">${open.length > 1 ? 'یکی از گرو�
   }
   function renderSheet(done) {
     const t = typeOf(sheetType), box = sheet.querySelector('.chs-in');
-    const top = title => `<div class="chs-top"><h2>${esc(title)}</h2><button type="button" data-chs-close aria-label="بستن">✕</button></div>`;
-    if (!t) { box.innerHTML = top('چله') + `<p class="chl-bad">${esc(typesError || 'این چله دیگر در فهرست نیست.')}</p>`; return; }
+    // دکمه بالای برگه: لینک همین چله را برای فرستادن در گروه یا کانال کپی می‌کند (پیش یا پس از ثبت‌نام).
+    const top = (title, link = true) => `<div class="chs-top"><h2>${esc(title)}</h2>${link ? `<button type="button" class="chs-link" data-chs-share aria-label="کپی لینک ثبت‌نام" title="کپی لینک ثبت‌نام">${ICON_LINK}</button>` : ''}<button type="button" data-chs-close aria-label="بستن">✕</button></div>`;
+    if (!t) { box.innerHTML = top('چله', false) + `<p class="chl-bad">${esc(typesError || 'این چله دیگر در فهرست نیست.')}</p>`; return; }
     if (t.kind === 'hezb') return renderHezb(box, top, t, done);
     if (done) {
       const m = mine.find(x => x.code === done);
@@ -519,7 +522,8 @@ ${already.length ? `<div class="chs-mine">شما با نام «${esc(already.map
 <p class="chl-note">برای دریافت اخبار دوره، مثل شروع چله. اگر نمی‌خواهید خالی بگذارید؛ همه اخبار در همین سایت، بخش «چله‌های من» هم هست.</p>
 <button type="button" class="chs-main" data-chs-join>${toReserve ? 'ثبت‌نام در فهرست رزرو' : t.kind === 'text' ? 'ثبت‌نام در چله' : 'ثبت‌نام در دوره'}</button><div class="chl-msg" id="chsMsg"></div>
 ${t.reserve && !toReserve ? `<p class="chl-note">وقتی ${fa(t.capacity)} نفر کامل شد، ${fa(t.reserve)} نفر بعدی در فهرست رزرو می‌روند تا اگر کسی انصراف داد، جایش خودکار پر شود.</p>` : ''}
-<button type="button" class="chs-alt chl-read" data-read="${esc(t.text_key)}">${ICON_BOOK}خواندن متن ${t.kind === 'text' ? esc(textTitle(t.text_key, textsList) || '') : 'قرآن'}</button>`;
+<button type="button" class="chs-alt chl-read" data-read="${esc(t.text_key)}">${ICON_BOOK}خواندن متن ${t.kind === 'text' ? esc(textTitle(t.text_key, textsList) || '') : 'قرآن'}</button>
+<button type="button" class="chs-alt chl-read" data-chs-share>${ICON_LINK}فرستادن لینک ثبت‌نام برای دیگران</button>`;
   }
   async function onSheetClick(e) {
     const b = e.target.closest('button'); if (!b) return;
@@ -597,7 +601,8 @@ ${!acc ? `<p>اگر کد ${chl ? 'چله' : 'پیگیری'} را دارید، آ
   }
   async function share(t) {
     if (!t) return;
-    const text = `دعوت به ${t.title}${t.capacity ? ` (هر دوره ${fa(t.capacity)} نفر)` : ''}؛ ${fa(t.days)} روز با هم بخوانیم. برای ثبت‌نام این لینک را باز کنید:`;
+    const len = t.kind === 'hezb' ? 'هر روز یک حزب، با هم یک ختم قرآن در روز' : t.kind === 'page' ? 'هر روز یک صفحه با هم بخوانیم' : `${fa(t.days)} روز با هم بخوانیم`;
+    const text = `دعوت به ${t.title}${t.capacity && t.kind !== 'hezb' ? ` (هر دوره ${fa(t.capacity)} نفر)` : ''}؛ ${len}. برای ثبت‌نام این لینک را باز کنید:`;
     const url = regLink(t.key);
     try { if (navigator.share) { await navigator.share({ title: t.title, text, url }); return; } } catch (e) { if (e?.name === 'AbortError') return; }
     try { await navigator.clipboard.writeText(`${text}\n${url}`); toast('لینک دعوت کپی شد؛ در گروه بفرستید.'); }
@@ -608,6 +613,7 @@ ${!acc ? `<p>اگر کد ${chl ? 'چله' : 'پیگیری'} را دارید، آ
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.style.cssText = 'position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;max-width:90vw;background:#1f1a14;color:#fff;padding:10px 18px;border:1px solid var(--gold);text-shadow:none;font-size:15px;text-align:center'; document.body.appendChild(toastEl); }
     toastEl.textContent = t; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { toastEl.hidden = true; }, 3200);
   }
+  const ICON_LINK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
   const ICON_BOOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H2zM22 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z"/></svg>';
   let textsList = [];
   allTexts().then(l => { textsList = l; }).catch(() => {});
@@ -985,6 +991,7 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
     $a('#chlTextPreview').onclick = () => { const t = formText(); if (!t.sections.length) return tmsg('متن خالی است.'); textCache.__preview = t; openReader('__preview'); };
     $a('#chlTextReset').onclick = resetText;
     pane.addEventListener('click', onAdminClick);
+    pane.addEventListener('focusin', e => { if (e.target.matches('[data-sel]')) e.target.select(); });
   }
   const msgTo = (id, t, ok) => { const m = $a('#' + id); if (!m) return; m.className = 'adm-msg ' + (ok ? 'adm-ok' : 'adm-bad'); m.textContent = t; };
   const amsg = (t, ok) => msgTo('chlAdminMsg', t, ok), tmsg = (t, ok) => msgTo('chlTextMsg', t, ok), ymsg = (t, ok) => msgTo('chlTypeMsg', t, ok);
@@ -1023,7 +1030,8 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
     const box = $a('#chlTypes');
     const list = adminTypes.map((t, i) => editKey === t.key ? typeForm(t) : `<div class="chl-card${t.visible ? '' : ' chl-off'}"><h3>${esc(t.title)}${t.visible ? '' : ' (پنهان)'}</h3>
 <p class="hint" style="margin:0">${esc(typeSummary(t))}${t.kind === 'text' ? `<br>متن: ${esc(textTitle(t.text_key, texts))}` : ''}</p>
-<div class="chl-tools"><button type="button" data-tedit="${esc(t.key)}">ویرایش</button><button type="button" class="reg-light" data-tlink="${esc(t.key)}">کپی لینک ثبت‌نام</button><button type="button" class="reg-light chl-arr" data-tup="${i}" ${i ? '' : 'disabled'} aria-label="بالاتر">▲</button><button type="button" class="reg-light chl-arr" data-tdown="${i}" ${i < adminTypes.length - 1 ? '' : 'disabled'} aria-label="پایین‌تر">▼</button></div></div>`);
+${t.visible ? `<div class="row chl-reglink"><input readonly dir="ltr" value="${esc(regLink(t.key))}" aria-label="لینک ثبت‌نام ${esc(t.title)}" data-sel><button type="button" data-tlinkonly="${esc(t.key)}">کپی لینک</button></div>` : '<p class="hint" style="margin:4px 0 0">این چله پنهان است؛ لینک ثبت‌نامش کار نمی‌کند تا دوباره در منو نمایش داده شود.</p>'}
+<div class="chl-tools"><button type="button" data-tedit="${esc(t.key)}">ویرایش</button>${t.visible ? `<button type="button" class="reg-light" data-tlink="${esc(t.key)}">کپی متن دعوت با لینک</button>` : ''}<button type="button" class="reg-light chl-arr" data-tup="${i}" ${i ? '' : 'disabled'} aria-label="بالاتر">▲</button><button type="button" class="reg-light chl-arr" data-tdown="${i}" ${i < adminTypes.length - 1 ? '' : 'disabled'} aria-label="پایین‌تر">▼</button></div></div>`);
     if (editKey === '__new') list.push(typeForm(null));
     box.innerHTML = list.join('') || '<p class="hint">هنوز چله‌ای در منو نیست. «افزودن چله تازه» را بزنید.</p>';
     const f = box.querySelector('.chl-tform');
@@ -1180,6 +1188,7 @@ ${r.status === 'open' ? `<div class="row" style="margin-top:8px"><input id="chlA
         const t = adminTypes.find(x => x.key === d.tlink);
         return copy(`برای ثبت‌نام در ${t.title} این لینک را باز کنید:\n${regLink(t.key)}`, 'chlTypeMsg');
       }
+      if (d.tlinkonly) return copy(regLink(d.tlinkonly), 'chlTypeMsg');
       if (d.tup || d.tdown) {
         const i = +(d.tup ?? d.tdown), j = d.tup ? i - 1 : i + 1, a = adminTypes[i], c = adminTypes[j];
         const sa = a.sort ?? i, sc = c.sort ?? j, [na, nc] = sa === sc ? [j, i] : [sc, sa];
@@ -1291,6 +1300,7 @@ ${r.status === 'open' ? `<div class="row" style="margin-top:8px"><input id="chlA
     }
     const key = new URLSearchParams(location.search).get('chelleh');
     if (key) {
+      window.tour?.skipOnce?.(); // راهنمای بار اول روی برگه ثبت‌نامِ کسی که از لینک آمده باز نشود.
       // پارامتر از نشانی برداشته می‌شود تا با تازه‌سازی صفحه، صفحه ثبت‌نام دوباره باز نشود.
       try { const u = new URL(location.href); u.searchParams.delete('chelleh'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch {}
       openSheet(key);
