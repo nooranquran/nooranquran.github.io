@@ -693,3 +693,18 @@ begin
     insert into public.chelleh_meta (key, value) values ('seed_v4', now()::text);
   end if;
 end $$;
+
+-- نسخه ۵: چله دعای هفتم و دعای چهاردهم صحیفه سجادیه (متن در chelleh/sahifa7.json و chelleh/sahifa14.json).
+do $$
+declare sat date := public.reading_day() + (6 - extract(dow from public.reading_day())::integer + 7) % 7;
+begin
+  if sat = public.reading_day() then sat := sat + 7; end if;
+  if not exists (select 1 from public.chelleh_meta where key = 'seed_v5') then
+    insert into public.chelleh_types (key, title, text_key, kind, start_mode, capacity, days, start_after_days, next_start, sort, description) values
+      ('sahifa7', 'چله دعای هفتم صحیفه سجادیه', 'sahifa7', 'text', 'date', null, 40, 0, sat, 19, 'دعای «یا من تُحَلُّ به عُقَدُ المکاره»، از امام سجاد علیه‌السلام برای گشایش در سختی‌ها و اندوه‌ها.'),
+      ('sahifa14', 'چله دعای چهاردهم صحیفه سجادیه', 'sahifa14', 'text', 'date', null, 40, 0, sat, 20, 'دعای امام سجاد علیه‌السلام هنگامی که به ایشان ستم می‌شد یا از ستمگران کاری ناپسند می‌دیدند.')
+    on conflict (key) do nothing;
+    perform public.chl_sync_type(k) from unnest(array['sahifa7', 'sahifa14']) k where exists (select 1 from public.chelleh_types t where t.key = k);
+    insert into public.chelleh_meta (key, value) values ('seed_v5', now()::text);
+  end if;
+end $$;

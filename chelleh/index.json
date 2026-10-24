@@ -10,5 +10,7 @@
   { "key": "ahd", "title": "دعای عهد" },
   { "key": "samat", "title": "دعای سمات" },
   { "key": "kumayl", "title": "دعای کمیل" },
-  { "key": "tavassul", "title": "دعای توسل" }
+  { "key": "tavassul", "title": "دعای توسل" },
+  { "key": "sahifa7", "title": "دعای هفتم صحیفه سجادیه" },
+  { "key": "sahifa14", "title": "دعای چهاردهم صحیفه سجادیه" }
 ]
