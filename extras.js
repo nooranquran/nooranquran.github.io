@@ -156,12 +156,12 @@ body.v2 .hint,body.v2 .lead{color:#f4ead8}
         if (!selected || selected.number !== gNum) { msg.textContent = 'گروه تغییر کرده است؛ دوباره «نمایش سهم امروز» را بزنید.'; return; }
         reportId.value = toFa(id); verifyReportIdentity();
         if (!verifiedReport) { msg.textContent = reportMessage.textContent; return; }
-        if (submitReport.disabled) { msg.textContent = reportMessage.textContent; if (/قبلاً ثبت شده/.test(msg.textContent)) { markDone(gNum, id, today); renderProg(); setTimeout(renderBox, 1200); } return; }
+        if (submitReport.disabled) { msg.textContent = reportMessage.textContent; if (/قبلاً ثبت شده/.test(msg.textContent)) { markDone(gNum, id, verifiedReport?.reportDate || today); renderProg(); setTimeout(renderBox, 1200); } return; }
         readCheck.checked = true; b.disabled = true;
         const obs = new MutationObserver(() => {
           const txt = reportMessage.textContent;
           msg.textContent = txt; msg.style.color = reportMessage.style.color;
-          if (/با موفقیت ثبت شد|قبلاً ثبت شده/.test(txt)) { obs.disconnect(); markDone(gNum, id, today); renderProg(); setTimeout(renderBox, 1200); }
+          if (/با موفقیت ثبت شد|قبلاً ثبت شده/.test(txt)) { obs.disconnect(); markDone(gNum, id, verifiedReport?.reportDate || today); renderProg(); setTimeout(renderBox, 1200); }
           else if (!/در حال ثبت/.test(txt)) { obs.disconnect(); b.disabled = false; }
         });
         obs.observe(reportMessage, { childList: true, characterData: true, subtree: true });
