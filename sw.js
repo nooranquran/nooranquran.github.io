@@ -74,11 +74,20 @@ self.addEventListener('fetch', e => {
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'نوران', {
-    body: d.body || '', dir: 'rtl', lang: 'fa', tag: d.tag || 'quran', renotify: true,
-    icon: 'icon-192.png', badge: 'icon-badge.png', data: { url: d.url || './' },
-    actions: [{ action: 'open', title: 'باز کردن سایت' }, { action: 'cancel', title: 'قطع اعلان‌ها' }]
-  }));
+  // اعلان اذان شخصی (tag مثل azan_dhuhr:2026-10-24، azan.ts): اگر سایت باز است، به یکی از پنجره‌ها (ترجیحاً همان که دیده می‌شود)
+  // خبر داده می‌شود تا اگر کاربر «پخش صدای اذان» را روشن کرده، اذان را پخش کند (azan.js). سرویس‌ورکر خودش نمی‌تواند صوت پخش کند.
+  const azan = /^azan_(fajr|dhuhr|maghrib):/.exec(d.tag || '');
+  e.waitUntil(Promise.all([
+    self.registration.showNotification(d.title || 'نوران', {
+      body: d.body || '', dir: 'rtl', lang: 'fa', tag: d.tag || 'quran', renotify: true,
+      icon: 'icon-192.png', badge: 'icon-badge.png', data: { url: d.url || './', azan: azan ? azan[1] : null },
+      actions: [{ action: 'open', title: 'باز کردن سایت' }, { action: 'cancel', title: 'قطع اعلان‌ها' }]
+    }),
+    azan && self.clients.matchAll({ type: 'window' }).then(list => {
+      const w = list.find(c => c.focused) || list.find(c => c.visibilityState === 'visible') || list[0];
+      w?.postMessage({ type: 'azan', prayer: azan[1], key: d.tag });
+    })
+  ]));
 });
 
 async function cancelReminders() {
@@ -94,9 +103,17 @@ async function cancelReminders() {
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   if (e.action === 'cancel') { e.waitUntil(cancelReminders()); return; }
-  const url = new URL(e.notification.data && e.notification.data.url || './', self.registration.scope).href;
+  const u = new URL(e.notification.data && e.notification.data.url || './', self.registration.scope);
+  // اعلان اذان: سایت با ?azanplay= باز می‌شود تا اگر «پخش صدای اذان» روشن است، اذان پخش شود (azan.js).
+  if (e.notification.data?.azan) {
+    u.searchParams.set('azanplay', e.notification.data.azan); u.searchParams.set('azankey', e.notification.tag);
+    u.searchParams.set('azanat', String(e.notification.timestamp || Date.now()));
+  }
+  const url = u.href;
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     const w = list.find(c => c.url.split(/[?#]/)[0] === url.split(/[?#]/)[0] && 'navigate' in c);
+    // سایت از قبل باز است: دوباره بارگذاری نمی‌شود (اذانی که در حال پخش است قطع نشود)، فقط جلو می‌آید و خبر اذان را می‌گیرد.
+    if (w && e.notification.data?.azan) { w.postMessage({ type: 'azan', prayer: e.notification.data.azan, key: e.notification.tag }); return w.focus().catch(() => {}); }
     return w ? w.navigate(url).then(c => (c || w).focus()).catch(() => self.clients.openWindow(url)) : self.clients.openWindow(url);
   }));
 });
