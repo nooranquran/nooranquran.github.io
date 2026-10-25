@@ -279,9 +279,13 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
 
   // ---------- داده‌ها ----------
   let hezbRounds = [];
-  let types = [], typesError = '', mine = [], today = null, ready = false;
+  // اگر سرور در دسترس نباشد (مثلاً اینترنت ایران بدون فیلترشکن)، آخرین فهرست چله‌ها و «چله‌های من» که روی همین گوشی ذخیره شده نشان داده می‌شود
+  // (کلیدهای chlTypesCache و chlMineCache) با پیام «ارتباط برقرار نشد» و دکمه «دوباره»؛ با برگشتن اینترنت خودکار تازه می‌شود.
+  // «امروز» از نسخه ذخیره‌شده برداشته نمی‌شود تا ثبت روز اشتباه نشود.
+  let types = [], typesError = '', mine = [], today = null, ready = false, offline = false;
   async function loadTypes() {
-    try { types = (await rpc('chl_types')) || []; typesError = ''; } catch (e) { types = []; typesError = e.message; }
+    try { types = (await rpc('chl_types')) || []; typesError = ''; write('chlTypesCache', types); }
+    catch (e) { types = read('chlTypesCache', []); typesError = e.message; offline = true; if (types.length) return types; }
     if (types.some(t => t.kind === 'hezb')) { try { hezbRounds = (await rpc('reg_rounds')) || []; } catch { hezbRounds = []; } }
     if (types[0]?.today) today = types[0].today;
     return types;
@@ -297,8 +301,9 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
       const found = new Set(a.filter(m => m.status === 'open').map(m => m.code));
       list.filter(c => !found.has(c)).forEach(c => codes.remove(c));
       mine = a.filter(m => m.status === 'open');
+      write('chlMineCache', mine);
       if (mine[0]?.today) today = mine[0].today;
-    } catch { /* اینترنت قطع: فهرست قبلی می‌ماند */ }
+    } catch { /* اینترنت قطع: فهرست قبلی (یا نسخه ذخیره‌شده روی گوشی) می‌ماند */ offline = true; if (!mine.length) mine = read('chlMineCache', []).filter(m => list.includes(m.code)); }
     return mine;
   }
   window.chlRefresh = async () => { await refresh(); if (sheet?.classList.contains('show') && sheetType) renderSheet(); };
@@ -306,6 +311,7 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
   let readerOnClose = null; // کاری که پس از بستن متن انجام می‌شود (مثلاً باز شدن دوباره فهرست مفاتیح)
   window.chlRead = (key, onClose) => { readerOnClose = onClose || null; return openReader(key, null); }; // برای بخش «ادعیه» (ibadat.js): متن، ترجمه و صوت دعا
   async function refresh() {
+    offline = false;
     await Promise.all([loadTypes(), loadMine()]);
     today = today || isoIran();
     ready = true;
@@ -356,6 +362,7 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
     });
   }
   const typeOf = key => types.find(t => t.key === key);
+  const offlineNote = '<p class="sm-note chl-bad">ارتباط با سرور برقرار نشد (شاید اینترنت ضعیف است یا فیلترشکن لازم است). آخرین اطلاعات ذخیره‌شده روی همین گوشی نشان داده شده است. <button type="button" class="reg-light" data-chl-retry>دوباره</button></p>';
 
   // ---------- منو ----------
   // «قرآن آزاد» (quran-free.js) هم در همین فهرست، پس از دوره‌های قرآن می‌آید.
@@ -363,12 +370,13 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
     id: 'chelleh', order: 1,
     render(box) {
       if (!ready) { box.innerHTML = '<h3>ثبت‌نام در چله</h3><p class="sm-note">در حال دریافت…</p>'; return; }
-      if (!types.length) { if (isAdminView() && typesError) box.innerHTML = `<h3>ثبت‌نام در چله</h3><p class="sm-note">${esc(typesError)}</p>`; return; }
+      if (!types.length) { box.innerHTML = offline ? `<h3>ثبت‌نام در چله</h3>${offlineNote}` : isAdminView() && typesError ? `<h3>ثبت‌نام در چله</h3><p class="sm-note">${esc(typesError)}</p>` : ''; return; }
       const mineHtml = mine.length ? `<button type="button" class="sm-item" data-chl-mine><span class="sm-ic">⭐</span><span>چله‌های من<small>${fa(mine.length)} چله${mine.some(m => state(m) === 'run' && !(m.marked || []).includes(today)) ? '، امروز هنوز ثبت نشده' : ''}</small></span><span class="sm-go">‹</span></button>` : '';
       const item = t => `<button type="button" class="sm-item chl-mi" data-chl-type="${esc(t.key)}"><span class="sm-ic">${t.kind === 'text' ? '📿' : '📖'}</span><span>${esc(t.title)}<small>${esc(typeLine(t))}</small></span><span class="sm-go">‹</span></button>`;
       const quran = types.filter(t => t.kind !== 'text'), chl = types.filter(t => t.kind === 'text');
-      box.innerHTML = mineHtml + (quran.length ? `<h3>ثبت‌نام در دوره‌های قرآن</h3>${quran.map(item).join('')}${window.quranFree ? window.quranFree.menuItem() : ''}` : '') + (chl.length ? `<h3>ثبت‌نام در چله</h3>${chl.map(item).join('')}` : '');
+      box.innerHTML = (offline ? offlineNote : '') + mineHtml + (quran.length ? `<h3>ثبت‌نام در دوره‌های قرآن</h3>${quran.map(item).join('')}${window.quranFree ? window.quranFree.menuItem() : ''}` : '') + (chl.length ? `<h3>ثبت‌نام در چله</h3>${chl.map(item).join('')}` : '');
       box.onclick = e => {
+        if (e.target.closest('[data-chl-retry]')) { box.innerHTML = '<h3>ثبت‌نام در چله</h3><p class="sm-note">در حال دریافت…</p>'; refresh(); return; }
         const b = e.target.closest('[data-chl-type],[data-chl-mine]'); if (!b) return;
         window.siteMenu.close(true);
         if (b.dataset.chlType) openSheet(b.dataset.chlType, true);
@@ -634,6 +642,7 @@ ${!acc ? `<p>اگر کد ${chl ? 'چله' : 'پیگیری'} را دارید، آ
     document.querySelector('main').insertBefore(panel, groupsPanel || null);
   }
   panel.addEventListener('click', onPanelClick);
+  panel.addEventListener('click', e => { if (e.target.closest('[data-chl-retry]')) refresh(); });
 
   function renderPanel() {
     const has = mine.length > 0;
@@ -643,6 +652,7 @@ ${!acc ? `<p>اگر کد ${chl ? 'چله' : 'پیگیری'} را دارید، آ
     const list = [...mine].sort((a, b) => order[state(a)] - order[state(b)]);
     const active = list.filter(m => state(m) !== 'end'), ended = list.filter(m => state(m) === 'end');
     panel.innerHTML = `<div class="chl-head"><h2>چله‌های من</h2><button type="button" class="reg-light" data-new>+ چله تازه</button></div>
+${offline ? offlineNote : ''}
 ${has ? '' : '<p class="hint">هنوز در چله‌ای ثبت‌نام نکرده‌اید. از منوی سه‌خط بالای صفحه یا دکمه «چله تازه» یکی را انتخاب کنید.</p>'}
 ${active.map(card).join('')}${ended.length ? `<details class="chl-fold"${active.length ? '' : ' open'}><summary>چله‌های تمام‌شده (${fa(ended.length)})</summary>${ended.map(card).join('')}</details>` : ''}
 <details class="hint"><summary>کد چله دارید؟ (برای ادامه چله روی گوشی دیگر)</summary>
@@ -1346,5 +1356,7 @@ ${r.status === 'open' ? `<div class="row" style="margin-top:8px"><input id="chlA
   });
   // روز چله با اذان صبح عوض می‌شود؛ وقتی کاربر به صفحه برمی‌گردد، وضعیت تازه می‌شود.
   let lastShow = Date.now();
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - lastShow > 5 * 60000) refresh(); if (document.visibilityState === 'hidden') lastShow = Date.now(); });
+  window.addEventListener('online', () => { if (offline) refresh(); });
+  setInterval(() => { if (offline && !document.hidden) refresh(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (offline || Date.now() - lastShow > 5 * 60000)) refresh(); if (document.visibilityState === 'hidden') lastShow = Date.now(); });
 })();
