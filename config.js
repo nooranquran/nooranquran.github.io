@@ -7,7 +7,7 @@ window.APP_CONFIG = {
 // وقتی سرور Supabase از اینترنت ایران (بدون فیلترشکن) در دسترس نیست، همان درخواست از راه رله Cloudflare فرستاده می‌شود
 // (backend/cloudflare/relay.js). اول مستقیم امتحان می‌شود (حداکثر ۸ ثانیه)، اگر نرسید از رله؛ راهی که جواب داد تا ۶ ساعت اول امتحان می‌شود.
 // SUPABASE_PROXY خالی باشد یعنی رله خاموش است. نشانی رله باید در connect-src و img-src سیاست امنیتی index.html هم باشد.
-self.APP_CONFIG.SUPABASE_PROXY = '';
+self.APP_CONFIG.SUPABASE_PROXY = 'https://nooran-relay.hosseinkavianirad.workers.dev';
 (function () {
   const c = self.APP_CONFIG, P = c.SUPABASE_PROXY, base = c.SUPABASE_URL;
   if (!P || typeof self.fetch !== 'function') return;
