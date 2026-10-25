@@ -75,7 +75,7 @@ ${quick ? '<div class="jd-quick"><button type="button" data-q="0">امروز</bu
     const ac = new AbortController(), t = setTimeout(() => ac.abort(), timeout);
     let r;
     try { r = await fetch(`${cfg.SUPABASE_URL}/rest/v1/${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', signal: ac.signal }); }
-    catch { throw Error('ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.'); }
+    catch { throw Object.assign(Error('ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.'), { net: true }); } // net: جواب سرور نرسید (برای صف تیک چله، chelleh.js)
     finally { clearTimeout(t); if (writes) forget(); }
     const text = await r.text();
     let data = null; try { data = text ? JSON.parse(text) : null; } catch {}

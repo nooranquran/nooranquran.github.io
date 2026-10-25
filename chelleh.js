@@ -282,10 +282,21 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
   // اگر سرور در دسترس نباشد (مثلاً اینترنت ایران بدون فیلترشکن)، آخرین فهرست چله‌ها و «چله‌های من» که روی همین گوشی ذخیره شده نشان داده می‌شود
   // (کلیدهای chlTypesCache و chlMineCache) با پیام «ارتباط برقرار نشد» و دکمه «دوباره»؛ با برگشتن اینترنت خودکار تازه می‌شود.
   // «امروز» از نسخه ذخیره‌شده برداشته نمی‌شود تا ثبت روز اشتباه نشود.
-  let types = [], typesError = '', mine = [], today = null, ready = false, offline = false;
+  let types = [], typesError = '', mine = [], today = null, ready = false, offline = false, typesFresh = false;
+  // نسخه ثابت فهرست چله‌ها و دوره‌ها روی خود سایت (chelleh/live.json) که هر ساعت خودکار از سرور ساخته می‌شود
+  // (.github/workflows/chelleh-live.yml)؛ چون از گیت‌هاب می‌آید، وقتی Supabase در دسترس نیست هم باز می‌شود.
+  let liveP = null;
+  const loadLive = () => liveP ||= fetch('chelleh/live.json').then(r => (r.ok ? r.json() : null)).catch(() => null).then(d => { if (!d) liveP = null; return d; });
+  // بهترین فهرست بدون سرور: نسخه همین گوشی یا نسخه سایت، هر کدام تازه‌تر است.
+  async function savedTypes() {
+    const c = read('chlTypesCache', []), at = +read('chlTypesCacheAt', 0) || 0, live = await loadLive();
+    const lt = live && Array.isArray(live.types) && live.types.length ? Date.parse(live.generated_at) || 1 : 0;
+    if (lt && (!Array.isArray(c) || !c.length || lt > at)) return { types: live.types, hezb: live.hezb_rounds || [] };
+    return { types: Array.isArray(c) ? c : [], hezb: null };
+  }
   async function loadTypes() {
-    try { types = (await rpc('chl_types')) || []; typesError = ''; write('chlTypesCache', types); }
-    catch (e) { types = read('chlTypesCache', []); typesError = e.message; offline = true; if (types.length) return types; }
+    try { types = (await rpc('chl_types')) || []; typesError = ''; typesFresh = true; write('chlTypesCache', types); write('chlTypesCacheAt', Date.now()); }
+    catch (e) { typesError = e.message; offline = true; const s = await savedTypes(); types = s.types; if (s.hezb) hezbRounds = s.hezb; if (types.length) return types; }
     if (types.some(t => t.kind === 'hezb')) { try { hezbRounds = (await rpc('reg_rounds')) || []; } catch { hezbRounds = []; } }
     if (types[0]?.today) today = types[0].today;
     return types;
@@ -302,6 +313,7 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
       list.filter(c => !found.has(c)).forEach(c => codes.remove(c));
       mine = a.filter(m => m.status === 'open');
       write('chlMineCache', mine);
+      applyPending();
       if (mine[0]?.today) today = mine[0].today;
     } catch { /* اینترنت قطع: فهرست قبلی (یا نسخه ذخیره‌شده روی گوشی) می‌ماند */ offline = true; if (!mine.length) mine = read('chlMineCache', []).filter(m => list.includes(m.code)); }
     return mine;
@@ -317,6 +329,7 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
     ready = true;
     renderPanel(); window.siteMenu?.refresh();
     updateDot();
+    if (!offline && pending().length) flushMarks();
   }
   // نفر رزروی که جای کسی را گرفته، تا پیام را ندیده نقطه منو روشن می‌ماند.
   const promoNew = m => m.promoted_at && !read('chlPromoSeen', []).includes(m.code);
@@ -358,7 +371,7 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
       note: p && window.quranFree ? 'برای خواندن صفحه‌های دیگر، «قرآن آزاد» بهتر است: از هر سوره، آیه یا صفحه‌ای شروع می‌کنید و جای خواندن‌تان روی گوشی ذخیره می‌شود.' : '',
       endText: extra ? `پایان ${title}. صفحه امروز شما صفحه ${fa(base)} است.` : done ? 'امروز ثبت شده است. قبول باشد.' : `پایان ${title}. قبول باشد.`,
       endButton: 'خواندم؛ ثبت برای امروز',
-      onEnd: run && !done && !extra ? () => mark(m.code, today, true).then(() => { toast('ثبت شد. قبول باشد.'); flash(m.code); }).catch(e => toast(e.message)) : null
+      onEnd: run && !done && !extra ? () => mark(m.code, today, true).then(() => { toast(mark.queued ? QUEUED_MSG : 'ثبت شد. قبول باشد.'); flash(m.code); }).catch(e => toast(e.message)) : null
     });
   }
   const typeOf = key => types.find(t => t.key === key);
@@ -485,7 +498,7 @@ ${open.length ? `<div class="chs-state">${open.length > 1 ? 'یکی از گرو�
     sheetRounds = [];
     if (!t) { sheet.querySelector('.chs-in').innerHTML = '<div class="chs-top"><h2>چله</h2><button type="button" data-chs-close aria-label="بستن">✕</button></div><p>در حال دریافت…</p>'; await loadTypes(); }
     const tt = typeOf(key);
-    if (tt && tt.kind !== 'hezb' && (tt.start_mode !== 'self' || tt.round_id)) { try { sheetRounds = (await rpc('chl_type_rounds', { p_type: key })) || []; } catch { sheetRounds = []; } }
+    if (tt && tt.kind !== 'hezb' && (tt.start_mode !== 'self' || tt.round_id)) { try { sheetRounds = (await rpc('chl_type_rounds', { p_type: key })) || []; } catch { offline = true; sheetRounds = (await loadLive())?.type_rounds?.[key] || []; } }
     if (sheetType === key) renderSheet();
   }
   function closeSheet(fromHistory) {
@@ -531,7 +544,7 @@ ${open.length ? `<div class="chs-state">${open.length > 1 ? 'یکی از گرو�
     const r0 = sheetRounds.length === 1 ? sheetRounds[0] : null, toReserve = r0 ? isFull(r0) : t.capacity && t.waiting >= t.capacity && t.reserve > 0 && t.start_mode !== 'self';
     const lastName = read('chlName', '');
     box.innerHTML = top(t.title) + `<div class="chs-facts">${facts.map(f => `<span>${esc(f)}</span>`).join('')}</div>
-${t.description ? `<p class="chl-desc">${esc(t.description)}</p>` : ''}<div class="chs-state">${st}</div>
+${t.description ? `<p class="chl-desc">${esc(t.description)}</p>` : ''}<div class="chs-state">${st}</div>${offline ? offlineNote() : ''}
 ${already.length ? `<div class="chs-mine">شما با نام «${esc(already.map(m => m.name).join('، '))}» در این چله هستید. اگر برای شخص دیگری ثبت‌نام می‌کنید، نام او را بنویسید.</div>` : ''}
 <label for="chsName">نام و نام خانوادگی</label><input id="chsName" maxlength="60" autocomplete="name" placeholder="مثلاً فاطمه رضایی" value="${already.length ? '' : esc(lastName)}">
 <label for="chsEmail">ایمیل <small style="font-weight:400;color:var(--muted)">(اختیاری)</small></label><input id="chsEmail" type="email" inputmode="email" dir="ltr" maxlength="120" autocomplete="email" placeholder="name@example.com" value="${esc(read('chlEmail', ''))}">
@@ -543,6 +556,7 @@ ${t.reserve && !toReserve ? `<p class="chl-note">وقتی ${fa(t.capacity)} نف
   }
   async function onSheetClick(e) {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.hasAttribute('data-chl-retry')) { b.disabled = true; await refresh(); if (sheetType) openSheet(sheetType); return; }
     if (b.dataset.read) {
       const t = typeOf(sheetType);
       if (t?.kind === 'juz') return openQuran({ juz: 1 });
@@ -773,7 +787,7 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
       const code = d.mark || d.unmark;
       if (d.unmark && !confirm('ثبت «خواندم» برای امروز برداشته شود؟')) return;
       b.disabled = true;
-      try { await mark(code, d.day, !!d.mark); if (d.mark) toast(d.day === today ? 'ثبت شد. قبول باشد.' : d.day === isoAdd(today, -1) ? 'روز دیروز هم ثبت شد.' : `${typeof shortDayFa === 'function' ? shortDayFa(d.day) : 'آن روز'} هم ثبت شد.`); }
+      try { await mark(code, d.day, !!d.mark); if (mark.queued) toast(d.mark ? QUEUED_MSG : 'برداشته شد؛ هر وقت اینترنت به سرور رسید، خودکار فرستاده می‌شود.'); else if (d.mark) toast(d.day === today ? 'ثبت شد. قبول باشد.' : d.day === isoAdd(today, -1) ? 'روز دیروز هم ثبت شد.' : `${typeof shortDayFa === 'function' ? shortDayFa(d.day) : 'آن روز'} هم ثبت شد.`); }
       catch (err) { const m = panel.querySelector('#chlM' + code); if (m) { m.className = 'chl-msg chl-bad'; m.textContent = err.message; } b.disabled = false; }
       return;
     }
@@ -794,12 +808,57 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
       codes.add(c); await refresh(); flash(c); window.account?.sync();
     } catch (e) { msg.className = 'chl-msg chl-bad'; msg.textContent = e.message; }
   }
+  // تیک «خواندم»: اگر جواب سرور نرسید (اینترنتی که به سرور نمی‌رسد)، تیک روی همین گوشی ثبت و نگه داشته می‌شود (کلید chlPendingMarks)
+  // و با برگشتن اینترنت، باز شدن دوباره صفحه یا هر دو دقیقه خودکار فرستاده می‌شود؛ تا آن موقع روی کارت هم ثبت‌شده دیده می‌شود.
+  // chl_mark تکراری بی‌ضرر است و روزهای تا ۷ روز گذشته را می‌پذیرد. برای هر کد و روز فقط آخرین کار (زدن یا برداشتن) نگه داشته می‌شود.
+  const PKEY = 'chlPendingMarks', pending = () => { const a = read(PKEY, []); return Array.isArray(a) ? a : []; };
+  const samePM = (a, b) => a.code === b.code && a.day === b.day;
+  function setMarked(m, day, done) {
+    const s = new Set(m.marked || []), had = s.has(day);
+    if (done) s.add(day); else s.delete(day);
+    m.marked = [...s].sort();
+    if (day === today && had !== done) m.done_today = Math.max(0, (m.done_today || 0) + (done ? 1 : -1));
+  }
+  function applyPending() { pending().forEach(p => { const m = mine.find(x => x.code === p.code); if (m) setMarked(m, p.day, p.done); }); }
+  // mark.queued: آخرین تیک فقط روی گوشی ذخیره شد (هنوز به سرور نرسیده).
+  const QUEUED_MSG = 'ثبت شد ✓ روی همین گوشی ذخیره شد و هر وقت اینترنت به سرور رسید، خودکار فرستاده می‌شود.';
   async function mark(code, day, done) {
-    const marked = await rpc('chl_mark', { p_code: code, p_day: day, p_done: done });
+    mark.queued = false;
     const m = mine.find(x => x.code === code);
-    if (m) { m.marked = marked || []; if (day === today) m.done_today = Math.max(0, m.done_today + (done ? 1 : -1)); }
+    // اگر سرور تا ۸ ثانیه جواب نداد، تیک همان موقع روی گوشی ثبت می‌شود و درخواست در پس‌زمینه ادامه می‌یابد (مثل گزارش روزانه، app.js).
+    const p = { code, day, done }, req = rpc('chl_mark', { p_code: code, p_day: day, p_done: done });
+    const r = await Promise.race([req.then(v => ({ v }), e => ({ e })), new Promise(ok => setTimeout(ok, 8000, { slow: true }))]);
+    if (r.e && !r.e.net) throw r.e;
+    if (r.slow || r.e) {
+      write(PKEY, [...pending().filter(x => !samePM(x, p)), p]);
+      if (m) { setMarked(m, day, done); write('chlMineCache', mine); }
+      renderPanel(); updateDot();
+      if (r.slow) req.then(v => {
+        if (!pending().some(x => samePM(x, p) && x.done === done)) return;
+        write(PKEY, pending().filter(x => !samePM(x, p)));
+        if (m && Array.isArray(v)) { m.marked = v; applyPending(); write('chlMineCache', mine); renderPanel(); updateDot(); }
+      }, () => {});
+      mark.queued = true;
+      return m;
+    }
+    const marked = r.v;
+    write(PKEY, pending().filter(x => !samePM(x, { code, day })));
+    if (m) { const was = (m.marked || []).includes(day); m.marked = marked || []; if (day === today && was !== done) m.done_today = Math.max(0, (m.done_today || 0) + (done ? 1 : -1)); write('chlMineCache', mine); }
     renderPanel(); updateDot();
     return m;
+  }
+  let flushing = false;
+  async function flushMarks() {
+    if (flushing || !pending().length) return;
+    flushing = true; let sent = false;
+    try {
+      for (const p of pending()) {
+        try { await rpc('chl_mark', { p_code: p.code, p_day: p.day, p_done: p.done }); }
+        catch (e) { if (e.net) break; } // خطای دیگر (مثلاً گذشتن ۷ روز یا چله بسته) با تکرار درست نمی‌شود؛ از صف برداشته می‌شود.
+        write(PKEY, pending().filter(x => !samePM(x, p))); sent = true;
+      }
+    } finally { flushing = false; }
+    if (sent) refresh();
   }
 
   // ---------- خواندن متن ----------
@@ -1340,8 +1399,13 @@ ${r.status === 'open' ? `<div class="row" style="margin-top:8px"><input id="chlA
   window.addEventListener('hashchange', () => renderPanel());
   // اگر فهرست چله‌ها قبلاً روی همین گوشی ذخیره شده، همان فوراً نشان داده می‌شود و در پس‌زمینه از سرور تازه می‌شود؛
   // با اینترنتی که به سرور نمی‌رسد، دیگر تا ۳۰ ثانیه روی «در حال دریافت…» نمی‌ماند.
-  { const t = read('chlTypesCache', []), list = codes.all();
-    if (Array.isArray(t) && t.length) { types = t; mine = read('chlMineCache', []).filter(m => list.includes(m.code)); today = isoIran(); ready = true; renderPanel(); window.siteMenu?.refresh(); updateDot(); } }
+  // اگر روی گوشی چیزی نیست و سرور تا ۴ ثانیه جواب نداد، نسخه ثابت سایت (chelleh/live.json) نشان داده می‌شود.
+  {
+    const show = t => { const list = codes.all(); types = t; mine = read('chlMineCache', []).filter(m => list.includes(m.code)); applyPending(); today = isoIran(); ready = true; renderPanel(); window.siteMenu?.refresh(); updateDot(); };
+    const t = read('chlTypesCache', []);
+    if (Array.isArray(t) && t.length) show(t);
+    else setTimeout(async () => { if (ready || typesFresh) return; const s = await savedTypes(); if (ready || typesFresh || !s.types.length) return; if (s.hezb) hezbRounds = s.hezb; show(s.types); }, 4000);
+  }
   refresh().then(() => {
     // لینک مستقیم ثبت‌نام: ?chelleh=<کلید>
     // پیوند اعلان‌های چله (?mine=1): رفتن به «چله‌های من».
@@ -1360,7 +1424,8 @@ ${r.status === 'open' ? `<div class="row" style="margin-top:8px"><input id="chlA
   });
   // روز چله با اذان صبح عوض می‌شود؛ وقتی کاربر به صفحه برمی‌گردد، وضعیت تازه می‌شود.
   let lastShow = Date.now();
-  window.addEventListener('online', () => { if (offline) refresh(); });
+  window.addEventListener('online', () => { if (offline) refresh(); else flushMarks(); });
+  setInterval(() => { if (!offline && !document.hidden) flushMarks(); }, 120000);
   setInterval(() => { if (offline && !document.hidden) refresh(); }, 60000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (offline || Date.now() - lastShow > 5 * 60000)) refresh(); if (document.visibilityState === 'hidden') lastShow = Date.now(); });
 })();
