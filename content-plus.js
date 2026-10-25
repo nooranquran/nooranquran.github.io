@@ -125,6 +125,16 @@
   if (D) {
     D.go('bk', openBook);
     D.go('cp', k => sheet(k));
+    // «qs:56,62»: سوره‌ها در قرآن‌خوان، یکی پس از دیگری (در پایان هر سوره دکمه سوره بعد)
+    D.go('qs', async k => {
+      const R = window.quranReader; if (!R) return;
+      const ix = await R.index().catch(() => null); if (!ix) return alert('بارگذاری قرآن انجام نشد. اینترنت را بررسی کنید.');
+      const list = k.split(',').map(Number), nm = s => `سوره ${R.name?.(s) || { 37: 'صافات', 56: 'واقعه', 62: 'جمعه' }[s] || toFa(s)}`;
+      const open = i => { const s = list[i], nx = list[i + 1];
+        R.openRange({ title: nm(s), sub: list.length > 1 ? list.map(nm).join(' و ') : '', from: ix.surah[s - 1], to: ix.surah[s - 1] + R.ayahs(s),
+          endText: `پایان ${nm(s)}. قبول باشد.`, ...(nx ? { endButton: `${nm(nx)} ›`, onEnd: () => setTimeout(() => open(i + 1), 50) } : {}) }); };
+      open(0);
+    });
     const isEnd = iso => { const a = D.hijri(iso), b = D.hijri(D.addDays(iso, 1)); return a && b && b.m !== a.m; };
     const at = (iso, h, [m, d]) => h.m === m && (d === h.d || (d === 'end' && isEnd(iso)));
     const mf = () => !!window.mafatih?.openKey && shown('mafatih');
