@@ -1338,6 +1338,10 @@ ${r.status === 'open' ? `<div class="row" style="margin-top:8px"><input id="chlA
   // ---------- راه‌اندازی ----------
   document.addEventListener('admin:tab', e => { if (e.detail === 'chl') loadAdmin(); });
   window.addEventListener('hashchange', () => renderPanel());
+  // اگر فهرست چله‌ها قبلاً روی همین گوشی ذخیره شده، همان فوراً نشان داده می‌شود و در پس‌زمینه از سرور تازه می‌شود؛
+  // با اینترنتی که به سرور نمی‌رسد، دیگر تا ۳۰ ثانیه روی «در حال دریافت…» نمی‌ماند.
+  { const t = read('chlTypesCache', []), list = codes.all();
+    if (Array.isArray(t) && t.length) { types = t; mine = read('chlMineCache', []).filter(m => list.includes(m.code)); today = isoIran(); ready = true; renderPanel(); window.siteMenu?.refresh(); updateDot(); } }
   refresh().then(() => {
     // لینک مستقیم ثبت‌نام: ?chelleh=<کلید>
     // پیوند اعلان‌های چله (?mine=1): رفتن به «چله‌های من».
