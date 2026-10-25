@@ -5,7 +5,7 @@ window.APP_CONFIG = {
   VAPID_PUBLIC_KEY: 'BKrQ8ZqCBoafCsGdmyVecm9MnhBie3U6JQARQYUf3drvvKVQonnfYEPlkh3TEy4uD54uf0Sp9csZxiAwEpqHVSw'
 };
 // وقتی سرور Supabase از اینترنت ایران (بدون فیلترشکن) در دسترس نیست، همان درخواست از راه رله Cloudflare فرستاده می‌شود
-// (backend/cloudflare/relay.js). خواندن‌ها: اگر مسیر اول تا ۳ ثانیه جواب نداد، مسیر دوم هم هم‌زمان امتحان می‌شود و هر کدام زودتر جواب داد به کار می‌رود
+// (backend/cloudflare/relay.js). خواندن‌ها: اگر مسیر اول تا ۵ ثانیه جواب نداد، مسیر دوم هم هم‌زمان امتحان می‌شود و هر کدام زودتر جواب داد به کار می‌رود
 // (چون بعضی بخش‌ها خودشان بعد از ۵ ثانیه منصرف می‌شوند). ثبت‌ها (گزارش، ثبت‌نام، تیک چله…) دوبار فرستاده نمی‌شوند: اول یک مسیر تا ۶ ثانیه، بعد مسیر دیگر.
 // راهی که جواب داد تا ۶ ساعت اول امتحان می‌شود. SUPABASE_PROXY خالی یعنی رله خاموش؛ نشانی رله باید در connect-src و img-src سیاست امنیتی index.html هم باشد.
 self.APP_CONFIG.SUPABASE_PROXY = 'https://nooran-relay.hosseinkavianirad.workers.dev';
@@ -32,7 +32,7 @@ self.APP_CONFIG.SUPABASE_PROXY = 'https://nooran-relay.hosseinkavianirad.workers
         const second = () => { clearTimeout(timer); if (started === 2 || done || (sig && sig.aborted)) return; started = 2; go(order[1], 1); };
         const go = (to, i) => attempt(to).then(r => { if (done) return; done = true; clearTimeout(timer); ctrls.forEach((a, j) => j !== i && a.abort()); resolve(r); },
           e => { err = e; failed++; if (done || failed < started) return; if (started === 1 && !(sig && sig.aborted)) second(); else reject(err); });
-        go(order[0], 0); timer = setTimeout(second, 3000);
+        go(order[0], 0); timer = setTimeout(second, 5000);
       });
     }
     return (async () => {
