@@ -400,7 +400,7 @@ ${mfBtn('442', '🧎', 'نماز برای والدین و اموات', 'مفات
   // فقط داده‌های شخصی خود کاربر؛ ورود به حساب، مدیر، شناسه دستگاه‌ها و حافظه‌های موقت منتقل نمی‌شوند.
   const KEEP = ['me', 'reportedDays', 'regCodes', 'chlCodes', 'chlName', 'chlEmail', 'zekrState', 'zekrStats', 'khatmIds', 'khatmName', 'readPlan', 'nmDays',
     'prayerLoc', 'qrSaved', 'qrPlus', 'quranFree', 'quranReader', 'chlReader', 'bookReader', 'bookLast', 'mafatihLast', 'duaFav', 'crPos', 'comfort', 'featHide',
-    'secHide', 'bgPick', 'bgMine', 'audioPrefs', 'autoScroll', 'lastRead', 'menuRecent', 'searchRecent', 'wird', 'qaza', 'ehdaMine', 'laylNames', 'lite'];
+    'secHide', 'bgPick', 'bgMine', 'audioPrefs', 'autoScroll', 'lastRead', 'menuRecent', 'searchRecent', 'wird', 'qaza', 'ehdaMine', 'laylNames', 'lite', 'learnPlans'];
   function backup() {
     const body = open('پشتیبان و انتقال', 'برای گوشی تازه یا پس از پاک شدن مرورگر', '');
     const have = () => KEEP.filter(k => { try { return localStorage.getItem(k) != null; } catch { return false; } });

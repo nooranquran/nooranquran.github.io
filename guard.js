@@ -4,10 +4,25 @@
 // ۲) اگر همین کد روی نشانی دیگری باز شود (کپی سایت)، نوار قرمزی نشان می‌دهد که این نشانی رسمی نیست.
 //    کسی که سایت را عمداً جعل کند می‌تواند این فایل را بردارد؛ جلوی او را نگهبان پایگاه داده (origin-guard.sql) و آگاه بودن
 //    کاربران می‌گیرد. این فایل جلوی کپی‌های بی‌دقت و آینه‌ها را می‌گیرد و به بازدیدکننده نشانی درست را می‌گوید.
+// ۳) مینی‌اپ بله و ایتا: نشانی ‎?app=bale‎ یا ‎?app=eitaa‎ (ثبت‌شده در ربات پیام‌رسان). hezbApp پیش از بقیه اسکریپت‌ها گذاشته می‌شود
+//    تا بخش نصب و اعلان‌ها، که درون پیام‌رسان کار نمی‌کنند، پنهان شوند (install.js و reminders.js)؛ بقیه کار در learn.js است.
+//    نسخه وب این دو پیام‌رسان مینی‌اپ را در قاب باز می‌کند؛ قاب فقط از همین نشانی‌ها پذیرفته می‌شود.
 (function () {
   var OFFICIAL = 'nooranquran.github.io';
+  var MINI = { bale: /^https:\/\/([a-z0-9-]+\.)*bale\.ai$/, eitaa: /^https:\/\/([a-z0-9-]+\.)*eitaa\.(com|ir)$/ };
+  var mini = '';
+  try {
+    var m = /[?&]app=(bale|eitaa)\b/.exec(location.search);
+    if (m) { sessionStorage.setItem('miniApp', m[1]); sessionStorage.setItem('hezbApp', '1'); }
+    mini = sessionStorage.getItem('miniApp') || '';
+  } catch (e) {}
   var framedByOther = false;
   try { framedByOther = window.top !== window.self && window.top.location.hostname !== location.hostname; } catch (e) { framedByOther = true; }
+  if (framedByOther && MINI[mini]) {
+    var parent = '';
+    try { parent = (location.ancestorOrigins && location.ancestorOrigins[0]) || new URL(document.referrer).origin; } catch (e) {}
+    if (MINI[mini].test(parent)) framedByOther = false;
+  }
   if (framedByOther) {
     document.documentElement.style.display = 'none';
     try { window.top.location.replace(location.href); } catch (e) {}

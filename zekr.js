@@ -344,8 +344,10 @@ body.zk-lock{overflow:hidden}
   }
 
   // open('zahra'): با همان ذکر باز می‌شود (برای «تعقیبات» در کارت امروز، plus.js)
-  function open(pick) {
+  // open('custom', 'یا رحمن'): ذکر دلخواه با همین متن (برای اسماء الحسنی، learn-sheets.js)
+  function open(pick, text) {
     if (!shown()) return;
+    if (pick === 'custom' && typeof text === 'string' && text.trim()) S.custom = text.trim().slice(0, 60);
     if (typeof pick === 'string' && LIST.some(x => x.id === pick)) { S.sel = pick; saveS(); }
     if (!shade) {
       shade = document.createElement('div'); shade.className = 'zk-shade';

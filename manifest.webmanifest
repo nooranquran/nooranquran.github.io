@@ -32,5 +32,59 @@
     "books",
     "education",
     "lifestyle"
+  ],
+  "shortcuts": [
+    {
+      "name": "سهم امروز من",
+      "short_name": "سهم امروز",
+      "description": "دیدن سهم و متن قرائت امروز",
+      "url": "./?go=portion",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "گزارش قرائت",
+      "short_name": "گزارش",
+      "description": "اعلام قرائت سهم امروز",
+      "url": "./?go=report",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "ذکرشمار",
+      "short_name": "ذکرشمار",
+      "description": "صلوات، تسبیحات و ذکرهای دیگر",
+      "url": "./?go=zekr",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "قبله‌نما",
+      "short_name": "قبله",
+      "description": "جهت قبله و حرم‌ها",
+      "url": "./?go=qibla",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

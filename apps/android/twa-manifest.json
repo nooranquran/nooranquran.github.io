@@ -21,7 +21,32 @@
   "signingKey": { "path": "./android.keystore", "alias": "hezbkhani" },
   "appVersionName": "1.0.0",
   "appVersionCode": 1,
-  "shortcuts": [],
+  "shortcuts": [
+    {
+      "name": "سهم امروز من",
+      "shortName": "سهم امروز",
+      "url": "https://nooranquran.github.io/?go=portion",
+      "chosenIconUrl": "https://nooranquran.github.io/icon-192.png"
+    },
+    {
+      "name": "گزارش قرائت",
+      "shortName": "گزارش",
+      "url": "https://nooranquran.github.io/?go=report",
+      "chosenIconUrl": "https://nooranquran.github.io/icon-192.png"
+    },
+    {
+      "name": "ذکرشمار",
+      "shortName": "ذکرشمار",
+      "url": "https://nooranquran.github.io/?go=zekr",
+      "chosenIconUrl": "https://nooranquran.github.io/icon-192.png"
+    },
+    {
+      "name": "قبله‌نما",
+      "shortName": "قبله",
+      "url": "https://nooranquran.github.io/?go=qibla",
+      "chosenIconUrl": "https://nooranquran.github.io/icon-192.png"
+    }
+  ],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://nooranquran.github.io/manifest.webmanifest",
   "fallbackType": "customtabs",
