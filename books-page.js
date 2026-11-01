@@ -91,6 +91,8 @@ body.bk-lock{overflow:hidden}
   const prefs = Object.assign({ size: 28, trans: true, night: false, lang: {}, tr: {}, audio: {} }, read(RKEY, {}));
   const savePrefs = () => write(RKEY, prefs);
 
+  // نمایش ترجمه زیر متن: کتاب‌هایی که متنشان خودش فارسی است (کتاب مقدس) جدا و پیش‌فرض خاموش؛ بقیه یک تنظیم مشترک.
+  const transOn = () => cur?.ix?.main ? !!prefs.tb?.[cur.key] : prefs.trans;
   // زبان و مترجم انتخاب‌شده برای این کتاب؛ مترجم اول هر زبان پیش‌فرض است.
   function trChoice(ix) {
     const list = ix.translations || [], langs = [...new Set(list.map(t => t.lang))];
@@ -206,8 +208,9 @@ ${ix.parts.length > 4 ? `<select class="bk-psel" aria-label="بخش">${partOptio
   }
   function applyPrefs() {
     reader.style.setProperty('--qs', prefs.size + 'px');
-    reader.classList.toggle('night', prefs.night); reader.classList.toggle('no-tr', !prefs.trans);
-    const on = { 'tr-on': prefs.trans, 'tr-off': !prefs.trans, day: !prefs.night, night: prefs.night };
+    const tOn = transOn();
+    reader.classList.toggle('night', prefs.night); reader.classList.toggle('no-tr', !tOn);
+    const on = { 'tr-on': tOn, 'tr-off': !tOn, day: !prefs.night, night: prefs.night };
     reader.querySelectorAll('.cr-row [data-x]').forEach(b => b.classList.toggle('on', !!on[b.dataset.x]));
     if (cur?.ix) {
       // کتاب بی‌ترجمه (مثل منتهی‌الآمال) گزینه «ترجمه» ندارد.
@@ -282,7 +285,7 @@ ${ix.parts.length > 4 ? `<select class="bk-psel" aria-label="بخش">${partOptio
     const pv = step(-1), nx = step(1);
     // در کتاب مقدس رفتن به کتاب دیگر (پیدایش ← خروج) نام آن کتاب را هم دارد.
     const navName = x => (ix.main && x[0] !== part ? x[0].title + '، ' : '') + short(x[0], x[1]);
-    html += `<div class="cr-end">${ix.main ? `<p style="margin:0;font-size:13px;color:var(--muted)">متن: ${esc(ix.main.name)}${ix.main.src ? '، ' + esc(ix.main.src) : ''}</p>` : ''}${c.tr ? `<p style="margin:0;font-size:13px;color:var(--muted)">ترجمه: ${esc(c.tr.name)}${c.tr.src ? '، ' + esc(c.tr.src) : ''}</p>` : ''}<div class="bk-nav">${nx ? `<button type="button" data-bk-go="${nx[0].id}-${nx[1]}">${esc(navName(nx))} ›</button>` : ''}<button type="button" class="bk-list-btn" data-bk-go="list">فهرست</button>${pv ? `<button type="button" data-bk-go="${pv[0].id}-${pv[1]}">‹ ${esc(navName(pv))}</button>` : ''}</div></div>`;
+    html += `<div class="cr-end">${ix.main ? `<p style="margin:0;font-size:13px;color:var(--muted)">متن: ${esc(ix.main.name)}${ix.main.src ? '، ' + esc(ix.main.src) : ''}</p>` : ''}${c.tr ? `<p class="cr-trsrc" style="margin:0;font-size:13px;color:var(--muted)">ترجمه: ${esc(c.tr.name)}${c.tr.src ? '، ' + esc(c.tr.src) : ''}</p>` : ''}<div class="bk-nav">${nx ? `<button type="button" data-bk-go="${nx[0].id}-${nx[1]}">${esc(navName(nx))} ›</button>` : ''}<button type="button" class="bk-list-btn" data-bk-go="list">فهرست</button>${pv ? `<button type="button" data-bk-go="${pv[0].id}-${pv[1]}">‹ ${esc(navName(pv))}</button>` : ''}</div></div>`;
     reader.querySelector('.cr-body').innerHTML = html;
     renderAudio();
   }
@@ -337,7 +340,7 @@ ${ix.parts.length > 4 ? `<select class="bk-psel" aria-label="بخش">${partOptio
     if (x === 'menu') return reader.querySelector('.cr-menu').classList.toggle('show');
     if (x === 'smaller') prefs.size = Math.max(20, prefs.size - 2);
     if (x === 'bigger') prefs.size = Math.min(44, prefs.size + 2);
-    if (x === 'tr-on' || x === 'tr-off') prefs.trans = x === 'tr-on';
+    if (x === 'tr-on' || x === 'tr-off') { if (cur?.ix?.main) (prefs.tb ||= {})[cur.key] = x === 'tr-on'; else prefs.trans = x === 'tr-on'; }
     if (x === 'day' || x === 'night') prefs.night = x === 'night';
     if (x) return applyPrefs();
     const go = b.dataset.bkGo;

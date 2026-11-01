@@ -2,19 +2,19 @@
  "key": "jadid",
  "title": "عهد جدید",
  "about": "بخش دوم کتاب مقدس مسیحیان: چهار انجیل (متی، مرقس، لوقا و یوحنا)، اعمال رسولان، نامه‌ها و مکاشفه یوحنا؛ ۲۷ کتاب.",
- "src": "متن اصلی: «ترجمه قدیم» کتاب مقدس فارسی (۱۸۹۵ میلادی، ترجمه رابرت بروس و همکاران، چاپ انجمن کتاب مقدس بریتانیا)، مالکیت عمومی (Public Domain)، از ebible.org/pesOPV. در نسخه دیجیتال بسیاری از فاصله‌های میان واژه‌ها افتاده بود که به‌طور خودکار درست شد. ترجمه معاصر: Biblica® Open Persian Contemporary Bible 2022، © 1995، 2005، 2018، 2022 Biblica, Inc.، با مجوز CC BY-SA 4.0 (متن تغییرنیافته؛ نسخه رایگان در biblica.com و open.bible)؛ عنوان باب‌ها هم از همین ترجمه است. متن یونانی: The Greek New Testament: SBL Edition، © 2010 Society of Biblical Literature و Logos Bible Software، با مجوز CC BY 4.0 (نشانه‌های نسخه‌بدل حذف شده)، از ebible.org/grcsbl. ترجمه عربی: ون‌دایک (۱۸۶۵)، مالکیت عمومی، از ebible.org/arb-vd. انگلیسی: World English Bible و King James Version (۱۷۶۹)، هر دو مالکیت عمومی، از ebible.org.",
+ "src": "متن: ترجمه معاصر فارسی، Biblica® Open Persian Contemporary Bible 2022، © 1995، 2005، 2018، 2022 Biblica, Inc.، با مجوز CC BY-SA 4.0 (متن تغییرنیافته؛ نسخه رایگان در biblica.com و open.bible)؛ عنوان باب‌ها هم از همین ترجمه است. ترجمه‌های دیگر (از ⚙ در خواننده): «ترجمه قدیم» کتاب مقدس فارسی (۱۸۹۵ میلادی، ترجمه رابرت بروس و همکاران، چاپ انجمن کتاب مقدس بریتانیا)، مالکیت عمومی (Public Domain)، از ebible.org/pesOPV. در نسخه دیجیتال بسیاری از فاصله‌های میان واژه‌ها افتاده بود که به‌طور خودکار درست شد. متن یونانی: The Greek New Testament: SBL Edition، © 2010 Society of Biblical Literature و Logos Bible Software، با مجوز CC BY 4.0 (نشانه‌های نسخه‌بدل حذف شده)، از ebible.org/grcsbl. ترجمه عربی: ون‌دایک (۱۸۶۵)، مالکیت عمومی، از ebible.org/arb-vd. انگلیسی: World English Bible و King James Version (۱۷۶۹)، هر دو مالکیت عمومی، از ebible.org.",
  "main": {
   "lang": "fa",
-  "name": "ترجمه قدیم",
-  "src": "۱۸۹۵ میلادی، مالکیت عمومی"
+  "name": "ترجمه معاصر",
+  "src": "Biblica® Open Persian Contemporary Bible، © Biblica, Inc.، مجوز CC BY-SA 4.0"
  },
  "trFiles": true,
  "translations": [
   {
-   "id": "opcb",
-   "name": "ترجمه معاصر (Biblica)",
+   "id": "opv",
+   "name": "ترجمه قدیم (۱۸۹۵)",
    "lang": "fa",
-   "src": "© Biblica, Inc.، مجوز CC BY-SA 4.0"
+   "src": "مالکیت عمومی"
   },
   {
    "id": "grcsbl",

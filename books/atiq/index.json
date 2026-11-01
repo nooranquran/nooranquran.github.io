@@ -2,19 +2,19 @@
  "key": "atiq",
  "title": "عهد عتیق",
  "about": "کتاب مقدس یهودیان و بخش نخست کتاب مقدس مسیحیان (تَنَخ): تورات (پنج سِفر موسی)، کتاب‌های تاریخی، مزامیر داود (زبور) و کتاب‌های حکمت، و کتاب‌های پیامبران؛ ۳۹ کتاب.",
- "src": "متن اصلی: «ترجمه قدیم» کتاب مقدس فارسی (۱۸۹۵ میلادی، ترجمه رابرت بروس و همکاران، چاپ انجمن کتاب مقدس بریتانیا)، مالکیت عمومی (Public Domain)، از ebible.org/pesOPV. در نسخه دیجیتال بسیاری از فاصله‌های میان واژه‌ها افتاده بود که به‌طور خودکار درست شد. ترجمه معاصر: Biblica® Open Persian Contemporary Bible 2022، © 1995، 2005، 2018، 2022 Biblica, Inc.، با مجوز CC BY-SA 4.0 (متن تغییرنیافته؛ نسخه رایگان در biblica.com و open.bible)؛ عنوان باب‌ها هم از همین ترجمه است. متن عبری: Westminster Leningrad Codex (مؤسسه عبری وست‌مینستر)، مالکیت عمومی، از ebible.org/hebwlc؛ شماره آیه‌ها با جدول VerseMap پروژه OpenScriptures (morphhb) به شماره‌گذاری ترجمه‌ها برگردانده شده. ترجمه عربی: ون‌دایک (۱۸۶۵)، مالکیت عمومی، از ebible.org/arb-vd. انگلیسی: World English Bible و King James Version (۱۷۶۹)، هر دو مالکیت عمومی، از ebible.org.",
+ "src": "متن: ترجمه معاصر فارسی، Biblica® Open Persian Contemporary Bible 2022، © 1995، 2005، 2018، 2022 Biblica, Inc.، با مجوز CC BY-SA 4.0 (متن تغییرنیافته؛ نسخه رایگان در biblica.com و open.bible)؛ عنوان باب‌ها هم از همین ترجمه است. ترجمه‌های دیگر (از ⚙ در خواننده): «ترجمه قدیم» کتاب مقدس فارسی (۱۸۹۵ میلادی، ترجمه رابرت بروس و همکاران، چاپ انجمن کتاب مقدس بریتانیا)، مالکیت عمومی (Public Domain)، از ebible.org/pesOPV. در نسخه دیجیتال بسیاری از فاصله‌های میان واژه‌ها افتاده بود که به‌طور خودکار درست شد. متن عبری: Westminster Leningrad Codex (مؤسسه عبری وست‌مینستر)، مالکیت عمومی، از ebible.org/hebwlc؛ شماره آیه‌ها با جدول VerseMap پروژه OpenScriptures (morphhb) به شماره‌گذاری ترجمه‌ها برگردانده شده. ترجمه عربی: ون‌دایک (۱۸۶۵)، مالکیت عمومی، از ebible.org/arb-vd. انگلیسی: World English Bible و King James Version (۱۷۶۹)، هر دو مالکیت عمومی، از ebible.org.",
  "main": {
   "lang": "fa",
-  "name": "ترجمه قدیم",
-  "src": "۱۸۹۵ میلادی، مالکیت عمومی"
+  "name": "ترجمه معاصر",
+  "src": "Biblica® Open Persian Contemporary Bible، © Biblica, Inc.، مجوز CC BY-SA 4.0"
  },
  "trFiles": true,
  "translations": [
   {
-   "id": "opcb",
-   "name": "ترجمه معاصر (Biblica)",
+   "id": "opv",
+   "name": "ترجمه قدیم (۱۸۹۵)",
    "lang": "fa",
-   "src": "© Biblica, Inc.، مجوز CC BY-SA 4.0"
+   "src": "مالکیت عمومی"
   },
   {
    "id": "hebwlc",

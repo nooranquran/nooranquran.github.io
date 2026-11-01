@@ -15,14 +15,14 @@
     { key: 'muntaha', title: 'منتهی‌الآمال', icon: '📜', sub: 'زندگانی چهارده معصوم (ع)، نوشته محدث قمی', more: true },
     { key: 'huquq', title: 'رساله حقوق', icon: '⚖️', sub: 'پنجاه حق از امام سجاد (ع)', more: true },
     // بخش «دیگر کتب مقدس» (scripture: true): کتاب مقدس با ترجمه قدیم فارسی و ترجمه‌های دیگر؛ ساخت با tools/books/build_bible.py.
-    { key: 'atiq', title: 'عهد عتیق (تورات و کتب انبیا)', icon: '📜', sub: 'تورات موسی، مزامیر داود (زبور) و کتاب‌های پیامبران', scripture: true },
+    { key: 'atiq', title: 'عهد عتیق (تورات و کتب انبیا)', icon: '📜', sub: 'تورات موسی، مزامیر داود (زبور) و کتاب‌های پیامبران، ترجمه فارسی معاصر', scripture: true },
     { key: 'jadid', title: 'عهد جدید (انجیل)', icon: '✝️', sub: 'چهار انجیل، اعمال رسولان، نامه‌ها و مکاشفه', scripture: true }
   ];
   const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
   const LAST = 'bookLast'; // همان کلید books-page.js: جای آخرین خواندن هر کتاب
   let loading = null;
   const load = () => loading || (loading = new Promise((ok, bad) => {
-    const s = document.createElement('script'); s.src = 'books-page.js?v=4';
+    const s = document.createElement('script'); s.src = 'books-page.js?v=5';
     s.onload = ok; s.onerror = () => { loading = null; s.remove(); bad(); };
     document.head.appendChild(s);
   }));
