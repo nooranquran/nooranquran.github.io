@@ -43,7 +43,7 @@
   window.siteMenu?.section({
     id: 'books', order: 7,
     render(box) {
-      box.innerHTML = `<h3>کتاب‌ها</h3>${items(BOOKS.filter(b => !b.more && !b.scripture))}`;
+      box.innerHTML = `<h3>کتاب‌ها</h3>${items(BOOKS.filter(b => !b.more && !b.scripture && !b.stories))}`;
       wire(box);
     }
   });
