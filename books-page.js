@@ -3,8 +3,8 @@
 (function () {
   const BOOKS = window.books.list; // فهرست کتاب‌ها در books.js
   // نام زبان‌ها برای فهرست «زبان ترجمه» (مثل قرآن‌خوان)؛ مترجم‌های هر کتاب در index.json آن آمده‌اند.
-  const LANG_NAMES = { fa: 'فارسی', en: 'انگلیسی · English', ur: 'اردو', fr: 'فرانسوی · Français', de: 'آلمانی · Deutsch', es: 'اسپانیایی · Español', tr: 'ترکی · Türkçe', ru: 'روسی · Русский', id: 'اندونزیایی · Indonesia', az: 'آذربایجانی · Azərbaycan' };
-  const RTL = ['fa', 'ar', 'ur'];
+  const LANG_NAMES = { fa: 'فارسی', ar: 'عربی · العربية', he: 'عبری (متن اصلی) · עברית', grc: 'یونانی (متن اصلی) · Ελληνικά', en: 'انگلیسی · English', ur: 'اردو', fr: 'فرانسوی · Français', de: 'آلمانی · Deutsch', es: 'اسپانیایی · Español', tr: 'ترکی · Türkçe', ru: 'روسی · Русский', id: 'اندونزیایی · Indonesia', az: 'آذربایجانی · Azərbaycan' };
+  const RTL = ['fa', 'ar', 'ur', 'he'];
   const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fa = x => String(x).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
   const pad3 = n => String(n).padStart(3, '0');
@@ -49,7 +49,14 @@ body.bk-lock{overflow:hidden}
 .bk-nav{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
 .bk-nav button{flex:1 1 0;max-width:200px;height:46px;background:var(--accent);color:#fff;border:0;font:600 15px Vazirmatn,sans-serif}
 .bk-nav button.bk-list-btn{background:transparent;color:var(--accent);border:1px solid var(--line)}
-.cr.night .bk-nav button{color:#10201a}.cr.night .bk-nav button.bk-list-btn{color:var(--accent)}`;
+.cr.night .bk-nav button{color:#10201a}.cr.night .bk-nav button.bk-list-btn{color:var(--accent)}
+.cr-ar.bk-m{font:normal calc(var(--qs)*.74)/2.05 Vazirmatn,Tahoma,sans-serif;text-align:justify;word-spacing:0}
+.bk-v{display:inline-block;min-width:1.6em;margin-inline-end:6px;padding:0 5px;border-radius:999px;background:var(--mint);color:var(--deep);font:700 .62em/1.7 Vazirmatn,sans-serif;text-align:center;vertical-align:.18em}
+.cr.night .bk-v{background:#ffffff1a;color:var(--accent)}
+.bk-sec{padding:10px 2px}
+.cr-fa[lang=he]{font-family:'SBL Hebrew','Ezra SIL','Noto Serif Hebrew','Times New Roman',serif;font-size:calc(var(--qs)*.7);line-height:1.9;text-align:right}
+.cr-fa[lang=grc]{font-family:'Gentium Plus','Noto Serif','Times New Roman',Georgia,serif;font-size:calc(var(--qs)*.62)}
+.cr-fa[lang=ar]{font-family:ChlArabic,Vazirmatn,serif;font-size:calc(var(--qs)*.66);line-height:2}`;
   { const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); }
 
   // ---------- داده‌ها ----------
@@ -128,10 +135,18 @@ body.bk-lock{overflow:hidden}
     const lp = last && ix.parts.find(p => p.id === last.part), lt = lp && lp.items.find(i => i[0] === last.n);
     shade.querySelector('.bk-in').innerHTML = `${lt ? `<button type="button" class="bk-resume" data-bk-open="${lp.id}-${last.n}">ادامه خواندن<small>${esc(itemLabel(lp, last.n, lt[1]))}</small></button>` : ''}
 ${picksHtml(ix)}${ix.about ? `<p class="bk-note" style="margin-bottom:8px">${esc(ix.about)}</p>` : ''}
-${ix.parts.length > 4 ? `<select class="bk-psel" aria-label="بخش">${ix.parts.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('')}</select>` : ix.parts.length > 1 ? `<div class="bk-tabs" role="tablist">${ix.parts.map(p => `<button type="button" role="tab" data-bk-tab="${p.id}">${esc(p.title)}</button>`).join('')}</div>` : ''}
+${ix.parts.length > 4 ? `<select class="bk-psel" aria-label="بخش">${partOptions(ix)}</select>` : ix.parts.length > 1 ? `<div class="bk-tabs" role="tablist">${ix.parts.map(p => `<button type="button" role="tab" data-bk-tab="${p.id}">${esc(p.title)}</button>`).join('')}</div>` : ''}
 <input type="search" class="bk-find" placeholder="جستجوی شماره یا عنوان" aria-label="جستجو" value="${esc(query)}">
 <div class="bk-list"></div>${ix.src ? `<p class="bk-src">${esc(ix.src)}</p>` : ''}`;
     renderList(ix);
+  }
+  // فهرست کشویی بخش‌ها؛ کتاب‌هایی که بخش‌هایشان گروه دارند (کتاب مقدس: تورات، انجیل‌ها…) با سرگروه.
+  function partOptions(ix) {
+    const opt = p => `<option value="${p.id}">${esc(p.title)}</option>`;
+    if (!ix.parts.some(p => p.group)) return ix.parts.map(opt).join('');
+    const groups = [];
+    ix.parts.forEach(p => { const g = groups[groups.length - 1]; if (g && g.name === p.group) g.list.push(p); else groups.push({ name: p.group, list: [p] }); });
+    return groups.map(g => `<optgroup label="${esc(g.name)}">${g.list.map(opt).join('')}</optgroup>`).join('');
   }
   // گزیده‌های مشهور (امکان bookpicks، فهرست در content-plus.js): [بخش، شماره، نام کوتاه]
   function picksHtml(ix) {
@@ -197,6 +212,8 @@ ${ix.parts.length > 4 ? `<select class="bk-psel" aria-label="بخش">${ix.parts.
     if (cur?.ix) {
       // کتاب بی‌ترجمه (مثل منتهی‌الآمال) گزینه «ترجمه» ندارد.
       reader.querySelector('[data-x="tr-on"]').closest('.cr-row').hidden = !cur.ix.translations?.length;
+      // کتابی که متن اصلی‌اش فارسی است (کتاب مقدس: ترجمه قدیم) به جای «فقط عربی» نام همان متن را دارد.
+      reader.querySelector('[data-x="tr-off"]').textContent = cur.ix.main ? 'فقط ' + cur.ix.main.name : 'فقط عربی';
       const c = trChoice(cur.ix);
       const ls = reader.querySelector('[data-x-sel="lang"]'), ts = reader.querySelector('[data-x-sel="tr"]');
       ls.innerHTML = c.langs.map(l => `<option value="${l}">${esc(LANG_NAMES[l] || l)}</option>`).join(''); ls.value = c.lang;
@@ -257,14 +274,25 @@ ${ix.parts.length > 4 ? `<select class="bk-psel" aria-label="بخش">${ix.parts.
       // متن نثر فارسی (منتهی‌الآمال): h عنوان و p بند.
       if (s.h) return `<h4 class="bk-h">${esc(s.h)}</h4>`;
       if (s.p) return `<p class="bk-p">${esc(s.p)}</p>`;
+      if (ix.main) return mainSec(ix, c, dir, s);
       if (!s.ar) return `<div class="cr-sec only"><p class="cr-note">${esc(s.note)}</p></div>`;
       const t = c.tr ? trText(ix, s, c.tr.id) : '';
       return `<div class="cr-sec">${s.note ? `<p class="cr-note">${esc(s.note)}</p>` : ''}<p class="cr-ar" lang="ar" dir="rtl">${esc(s.ar)}</p>${t ? `<p class="cr-fa" lang="${c.lang}" dir="${dir}">${esc(t)}</p>` : ''}</div>`;
     }).join('');
     const pv = step(-1), nx = step(1);
-    html += `<div class="cr-end">${c.tr ? `<p style="margin:0;font-size:13px;color:var(--muted)">ترجمه: ${esc(c.tr.name)}${c.tr.src ? '، ' + esc(c.tr.src) : ''}</p>` : ''}<div class="bk-nav">${nx ? `<button type="button" data-bk-go="${nx[0].id}-${nx[1]}">${esc(short(nx[0], nx[1]))} ›</button>` : ''}<button type="button" class="bk-list-btn" data-bk-go="list">فهرست</button>${pv ? `<button type="button" data-bk-go="${pv[0].id}-${pv[1]}">‹ ${esc(short(pv[0], pv[1]))}</button>` : ''}</div></div>`;
+    // در کتاب مقدس رفتن به کتاب دیگر (پیدایش ← خروج) نام آن کتاب را هم دارد.
+    const navName = x => (ix.main && x[0] !== part ? x[0].title + '، ' : '') + short(x[0], x[1]);
+    html += `<div class="cr-end">${ix.main ? `<p style="margin:0;font-size:13px;color:var(--muted)">متن: ${esc(ix.main.name)}${ix.main.src ? '، ' + esc(ix.main.src) : ''}</p>` : ''}${c.tr ? `<p style="margin:0;font-size:13px;color:var(--muted)">ترجمه: ${esc(c.tr.name)}${c.tr.src ? '، ' + esc(c.tr.src) : ''}</p>` : ''}<div class="bk-nav">${nx ? `<button type="button" data-bk-go="${nx[0].id}-${nx[1]}">${esc(navName(nx))} ›</button>` : ''}<button type="button" class="bk-list-btn" data-bk-go="list">فهرست</button>${pv ? `<button type="button" data-bk-go="${pv[0].id}-${pv[1]}">‹ ${esc(navName(pv))}</button>` : ''}</div></div>`;
     reader.querySelector('.cr-body').innerHTML = html;
     renderAudio();
+  }
+  // آیه‌ای از کتابی که متن اصلی‌اش ترجمه است (ix.main، مثل کتاب مقدس): شماره آیه، متن اصلی و زیر آن ترجمه برگزیده.
+  // v و ve: شماره آیه (و آیه آخر، وقتی چند آیه در متن اصلی یکی شده‌اند).
+  function mainSec(ix, c, dir, s) {
+    const t = c.tr ? trText(ix, s, c.tr.id) : '', m = ix.main;
+    const num = s.v ? `<span class="bk-v">${fa(s.v)}${s.ve ? '–' + fa(s.ve) : ''}</span>` : '';
+    const main = s.ar ? esc(s.ar) : `<span style="color:var(--muted);font-size:.8em">(این آیه در ${esc(m.name)} جدا نیامده است)</span>`;
+    return `<div class="cr-sec bk-sec">${s.note ? `<p class="cr-note">${esc(s.note)}</p>` : ''}<p class="cr-ar bk-m" lang="${m.lang}" dir="${RTL.includes(m.lang) ? 'rtl' : 'ltr'}">${num}${main}</p>${t ? `<p class="cr-fa" lang="${c.lang}" dir="${dir}">${esc(t)}</p>` : ''}</div>`;
   }
   // صوت‌های این متن: فهرست ثابت خود متن (audio) و صوت‌های کتاب (index.json → audio: [{id, name, parts?, url}])؛
   // url الگوست با {part}، {n}، {nn} یا {nnn}، یا به جای آن urls: {<بخش>: {<شماره>: نشانی}} برای فایل‌هایی که نامشان شماره ندارد.
