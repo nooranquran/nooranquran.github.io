@@ -1,6 +1,6 @@
 # «دیگر کتب مقدس»: عهد عتیق (books/atiq) و عهد جدید (books/jadid) از متن‌های آزاد eBible.org.
-# متن اصلی هر آیه ترجمه قدیم فارسی (۱۸۹۵، مالکیت عمومی) است و زیر آن ترجمه‌ای که خواننده برگزیده:
-#   فارسی معاصر Biblica (CC BY-SA 4.0، در خود فایل باب)، و در فایل‌های جدا (books/<کتاب>/tr/<مترجم>/<بخش>/<باب>.json):
+# متن هر آیه ترجمه معاصر فارسی Biblica (CC BY-SA 4.0) است و اگر خواننده بخواهد (⚙) زیر آن ترجمه دیگری:
+#   ترجمه قدیم فارسی (۱۸۹۵، مالکیت عمومی، در خود فایل باب)، و در فایل‌های جدا (books/<کتاب>/tr/<مترجم>/<بخش>/<باب>.json):
 #   متن عبری (کدکس لنینگراد وست‌مینستر، مالکیت عمومی) یا یونانی (SBLGNT، CC BY 4.0)، عربی ون‌دایک (مالکیت عمومی)،
 #   انگلیسی World English Bible و King James (هر دو مالکیت عمومی).
 # همه آیه‌ها به شماره‌گذاری رایج ترجمه‌های فارسی و انگلیسی (KJV) هم‌تراز شده‌اند؛ متن عبری که شماره‌گذاری دیگری دارد
@@ -186,15 +186,15 @@ def main():
     notes = {}
     for k, v in opv.items():
         mm = re.search(r'\s*\[\*(.+?)\]\s*$', v)
-        if mm: opv[k] = v[:mm.start()].strip(); notes[k] = 'یادداشت نسخه دیجیتال ترجمه قدیم: ' + mm.group(1).strip()
+        if mm: opv[k] = v[:mm.start()].strip() + ' [یادداشت نسخه دیجیتال: ' + mm.group(1).strip() + ']'
     others = {t: {k: clean(t, v) for k, v in vpl(t)[0].items()} for t in ('hebwlc', 'grcsbl', 'arb-vd', 'engwebp', 'eng-kjv2006')}
     others['hebwlc'] = hebrew_kjv(others['hebwlc'])
     heads = headings()
     print('glue fixes:', len(glue))
 
-    SRC_TXT = ('متن اصلی: «ترجمه قدیم» کتاب مقدس فارسی (۱۸۹۵ میلادی، ترجمه رابرت بروس و همکاران، چاپ انجمن کتاب مقدس بریتانیا)، مالکیت عمومی (Public Domain)، از ebible.org/pesOPV. '
-               'در نسخه دیجیتال بسیاری از فاصله‌های میان واژه‌ها افتاده بود که به‌طور خودکار درست شد. '
-               'ترجمه معاصر: Biblica® Open Persian Contemporary Bible 2022، © 1995، 2005، 2018، 2022 Biblica, Inc.، با مجوز CC BY-SA 4.0 (متن تغییرنیافته؛ نسخه رایگان در biblica.com و open.bible)؛ عنوان باب‌ها هم از همین ترجمه است. ')
+    SRC_TXT = ('متن: ترجمه معاصر فارسی، Biblica® Open Persian Contemporary Bible 2022، © 1995، 2005، 2018، 2022 Biblica, Inc.، با مجوز CC BY-SA 4.0 (متن تغییرنیافته؛ نسخه رایگان در biblica.com و open.bible)؛ عنوان باب‌ها هم از همین ترجمه است. '
+               'ترجمه‌های دیگر (از ⚙ در خواننده): «ترجمه قدیم» کتاب مقدس فارسی (۱۸۹۵ میلادی، ترجمه رابرت بروس و همکاران، چاپ انجمن کتاب مقدس بریتانیا)، مالکیت عمومی (Public Domain)، از ebible.org/pesOPV. '
+               'در نسخه دیجیتال بسیاری از فاصله‌های میان واژه‌ها افتاده بود که به‌طور خودکار درست شد. ')
     BOOKS = {
       'atiq': dict(title='عهد عتیق', parts=OT, orig=('hebwlc', 'he', 'متن عبری (کدکس لنینگراد)'),
                    about='کتاب مقدس یهودیان و بخش نخست کتاب مقدس مسیحیان (تَنَخ): تورات (پنج سِفر موسی)، کتاب‌های تاریخی، مزامیر داود (زبور) و کتاب‌های حکمت، و کتاب‌های پیامبران؛ ۳۹ کتاب.',
@@ -209,42 +209,48 @@ def main():
         if os.path.isdir(root): shutil.rmtree(root)
         oid, olang, oname = B['orig']
         osrc = 'مالکیت عمومی' if oid == 'hebwlc' else '© 2010 SBL و Logos Bible Software، مجوز CC BY 4.0'
-        trs = [('opcb', 'ترجمه معاصر (Biblica)', 'fa', '© Biblica, Inc.، مجوز CC BY-SA 4.0'), (oid, oname, olang, osrc), ('vd', 'ون‌دایک (۱۸۶۵)', 'ar', 'مالکیت عمومی'),
+        trs = [('opv', 'ترجمه قدیم (۱۸۹۵)', 'fa', 'مالکیت عمومی'), (oid, oname, olang, osrc), ('vd', 'ون‌دایک (۱۸۶۵)', 'ar', 'مالکیت عمومی'),
                ('web', 'World English Bible', 'en', 'مالکیت عمومی'), ('kjv', 'King James Version (1769)', 'en', 'مالکیت عمومی')]
-        tsrc = {'opcb': opcb, oid: others[oid], 'vd': others['arb-vd'], 'web': others['engwebp'], 'kjv': others['eng-kjv2006']}
+        tsrc = {'opv': opv, oid: others[oid], 'vd': others['arb-vd'], 'web': others['engwebp'], 'kjv': others['eng-kjv2006']}
         parts, stats = [], collections.Counter()
         for code, pid, name, _, group in B['parts']:
-            chs = sorted({c for (b, c, v) in opv if b == code})
+            chs = sorted({c for (b, c, v) in opcb if b == code})
             items = []
             for c in chs:
-                # آیه‌های این باب: همه آیه‌های ترجمه قدیم و هر آیه‌ای که فقط در ترجمه دیگری آمده.
-                vs = sorted({v for d in [opv, *tsrc.values()] for (b, cc, v) in d if b == code and cc == c})
-                covered = {w for (b, cc, v), e in spans.items() if b == code and cc == c for w in range(v + 1, e + 1)}
-                vs = [v for v in vs if v not in covered]
+                # آیه‌های این باب: هر آیه‌ای که در یکی از متن‌ها آمده. آیه‌هایی که ترجمه معاصر با هم آورده (۳ تا ۵)
+                # یا ترجمه قدیم در یک شماره یکی کرده، یک بند می‌شوند (v تا ve) و متن همه متن‌ها در آن بند کنار هم می‌آید.
+                allv = sorted({v for d in [opv, *tsrc.values()] for (b, cc, v) in d if b == code and cc == c})
+                opcbv = [v for v in allv if (code, c, v) in opcb]
+                def reach(v):
+                    e = spans.get((code, c, v), v)
+                    if (code, c, v) in opcb_br:
+                        nxt = [w for w in opcbv if w > v]
+                        e = max(e, (nxt[0] - 1) if nxt else allv[-1])
+                    return e
+                groups, i = [], 0
+                while i < len(allv):
+                    v = allv[i]; e = reach(v); j = i + 1
+                    while j < len(allv) and allv[j] <= e: e = max(e, reach(allv[j])); j += 1
+                    groups.append((v, e)); i = j
+                join = lambda d, v, e: ' '.join(x for x in (d.get((code, c, w)) for w in range(v, e + 1)) if x)
                 secs = []
-                for i, v in enumerate(vs):
-                    s = {'v': v, 'ar': opv.get((code, c, v), '')}
-                    if (code, c, v) in spans: s['ve'] = spans[(code, c, v)]
-                    if not s['ar']: stats['no-opv'] += 1
-                    if (code, c, v) in notes: s['note'] = notes[(code, c, v)]
-                    t = ' '.join(x for x in (opcb.get((code, c, w)) for w in range(v, s.get('ve', v) + 1)) if x)
-                    if t:
-                        if (code, c, v) in opcb_br:  # چند آیه با هم: تا آیه پیش از آیه بعدیِ همین ترجمه
-                            nxt = [w for w in vs[i + 1:] if (code, c, w) in opcb]
-                            end = (nxt[0] - 1) if nxt else vs[-1]
-                            if end > v: t = f'(آیه‌های {fa_d(v)} تا {fa_d(end)}) {t}'
-                        s['fa'] = t
+                for v, e in groups:
+                    s = {'v': v}
+                    if e > v: s['ve'] = e
+                    s['ar'] = join(opcb, v, e)
+                    if not s['ar']: stats['no-main'] += 1
+                    t = join(opv, v, e)
+                    if t: s['fa'] = t
                     secs.append(s)
                 dump({'title': heads.get((code, c), ''), 'bism': False, 'sections': secs}, f'{root}/{pid}/{c:03d}.json')
                 for tid, *_ in trs[1:]:
-                    d = tsrc[tid]
-                    arr = [' '.join(x for x in (d.get((code, c, w)) for w in range(s['v'], s.get('ve', s['v']) + 1)) if x) or None for s in secs]
+                    arr = [join(tsrc[tid], s['v'], s.get('ve', s['v'])) or None for s in secs]
                     stats[tid + ' missing'] += arr.count(None)
                     dump({'n': len(secs), 't': arr}, f'{root}/tr/{tid}/{pid}/{c:03d}.json')
                 items.append([c, heads.get((code, c), '')])
             parts.append({'id': pid, 'title': name, 'one': 'مزمور' if pid == 'psa' else 'باب', 'group': group, 'items': items})
         ix = {'key': key, 'title': B['title'], 'about': B['about'], 'src': B['src'] + TAIL,
-              'main': {'lang': 'fa', 'name': 'ترجمه قدیم', 'src': '۱۸۹۵ میلادی، مالکیت عمومی'}, 'trFiles': True,
+              'main': {'lang': 'fa', 'name': 'ترجمه معاصر', 'src': 'Biblica® Open Persian Contemporary Bible، © Biblica, Inc.، مجوز CC BY-SA 4.0'}, 'trFiles': True,
               'translations': [{'id': i, 'name': n, 'lang': l, 'src': sr} for i, n, l, sr in trs], 'parts': parts}
         with open(f'{root}/index.json', 'w', encoding='utf-8') as fh: json.dump(ix, fh, ensure_ascii=False, indent=1)
         print(key, len(parts), 'books', sum(len(p['items']) for p in parts), 'chapters', dict(stats))
