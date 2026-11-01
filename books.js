@@ -41,7 +41,11 @@
   // «دیگر کتب مقدس»: کتاب‌هایی که قرآن از آن‌ها یاد کرده (تورات، زبور، انجیل)، از ترجمه‌های آزاد و معتبر.
   window.siteMenu?.section({
     id: 'scripture', order: 7.5,
-    render(box) { box.innerHTML = `<h3>دیگر کتب مقدس</h3>${items(BOOKS.filter(b => b.scripture))}`; wire(box); }
+    // امکان scripture (features.js): مدیر برای همه روشن می‌کند و هر کس می‌تواند برای خودش پنهان کند.
+    render(box) {
+      if (window.features && !window.features.shown('scripture')) { box.innerHTML = ''; return; }
+      box.innerHTML = `<h3>دیگر کتب مقدس</h3>${items(BOOKS.filter(b => b.scripture))}`; wire(box);
+    }
   });
   function items(list) {
     const last = read(LAST, {});

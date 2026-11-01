@@ -5,7 +5,7 @@
 // slot=morning و slot=evening (زمان‌بندی قدیمی ساعت ۱۰ و ۱۹) هم کار می‌کند.
 // اعلان اذان شخصی (push_azan، azan.ts): با slot=auto، و با slot=azan (زمان‌بندی سبک هر دقیقه، فقط همین) دقیق‌تر.
 // slot=test: «ارسال آزمایشی» از سایت؛ برنامه امروزِ همان یک دستگاه (endpoint در بدنه) را همین حالا می‌فرستد.
-// slot=sample و slot=broadcast: فقط مدیر (با توکن ورود مدیر): نمونه یک نوع اعلان به گوشی خودش، یا پیام همگانی.
+// slot=sample و slot=broadcast: فقط مدیر (با توکن ورود مدیر): نمونه یک نوع اعلان به گوشی خودش، یا پیام همگانی (broadcast با x-cron-secret هم).
 // Secrets لازم: VAPID_PUBLIC_KEY، VAPID_PRIVATE_KEY، CRON_SECRET. اختیاری: SITE_URL (پیش‌فرض https://nooranquran.github.io).
 // SUPABASE_URL، SUPABASE_ANON_KEY و SUPABASE_SERVICE_ROLE_KEY را خود Supabase می‌گذارد.
 // این تابع باید با JWT verification خاموش deploy شود؛ اجازه با x-cron-secret یا توکن مدیر بررسی می‌شود.
@@ -124,8 +124,10 @@ async function handle(req: Request): Promise<Response> {
   const slot = new URL(req.url).searchParams.get('slot') || ''
   if (!['auto', 'azan', 'morning', 'evening', 'test', 'sample', 'broadcast'].includes(slot)) return json({ error: 'bad_slot' }, 400)
   const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {}
-  if (['auto', 'azan', 'morning', 'evening'].includes(slot) && (!env('CRON_SECRET') || req.headers.get('x-cron-secret') !== env('CRON_SECRET'))) return json({ error: 'unauthorized' }, 401)
-  if (['sample', 'broadcast'].includes(slot) && !(await isAdmin(req))) return json({ error: 'not_admin' }, 403)
+  const cronOk = !!env('CRON_SECRET') && req.headers.get('x-cron-secret') === env('CRON_SECRET')
+  if (['auto', 'azan', 'morning', 'evening'].includes(slot) && !cronOk) return json({ error: 'unauthorized' }, 401)
+  // پیام همگانی با x-cron-secret هم فرستاده می‌شود (از خود پایگاه داده با pg_net، مثلاً خبر یک بخش تازه سایت).
+  if (['sample', 'broadcast'].includes(slot) && !(slot === 'broadcast' && cronOk) && !(await isAdmin(req))) return json({ error: 'not_admin' }, 403)
 
   webpush.setVapidDetails('https://nooranquran.github.io', env('VAPID_PUBLIC_KEY'), env('VAPID_PRIVATE_KEY'))
   const db = makeDb()
@@ -149,7 +151,9 @@ async function handle(req: Request): Promise<Response> {
     if (body.audience === 'chl') q = q.neq('chl_codes', '{}')
     const { data: subs, error } = await q
     if (error) return json({ error: error.message }, 500)
-    const msg = { title, body: text, url: `${SITE_URL}/`, tag: 'broadcast:' + Date.now() }
+    // path اختیاری: بخشی از سایت که با زدن اعلان باز می‌شود، مثل ?book=jadid
+    const path = typeof body.path === 'string' && /^\?[\w=&%-]{1,120}$/.test(body.path) ? body.path : ''
+    const msg = { title, body: text, url: `${SITE_URL}/${path}`, tag: 'broadcast:' + Date.now() }
     for (let i = 0; i < subs.length; i += 25) await Promise.all(subs.slice(i, i + 25).map(s => send(s, msg, 24 * 3600)))
     stats.devices = subs.length
     await db.from('push_runs').insert({ slot, stats: { ...stats, title } })
