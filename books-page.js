@@ -41,6 +41,7 @@
 .bk-list button.cur{border:2px solid var(--emerald);background:var(--mint)}
 .bk-list mark{background:#fde9a8;color:inherit}
 .bk-note{margin:6px 0 0;font-size:14px;color:var(--muted)}
+.bk-hid{margin:0 0 8px;padding:6px 10px;border:1px dashed var(--gold);border-radius:var(--r-card);text-align:center}
 .bk-src{margin:12px 0 0;font-size:13px;color:var(--muted);line-height:1.8}
 body.bk-lock{overflow:hidden}
 .cr-row select{flex:1;min-width:0;max-width:62%;height:40px;padding:0 8px;font:inherit;font-size:15px;color:var(--text);background:var(--bg);border:1px solid var(--line)}
@@ -61,10 +62,24 @@ body.bk-lock{overflow:hidden}
 
   // ---------- داده‌ها ----------
   const idx = {}, files = {};
-  const getIndex = key => idx[key] || (idx[key] = fetch(`books/${key}/index.json`).then(r => { if (!r.ok) throw Error(r.status); return r.json(); }).catch(e => { delete idx[key]; throw e; }));
+  // کتاب‌هایی که db دارند (اجازه نشرشان هنوز معلوم نیست) در سایت نیستند و متنشان در جدول book_texts سرور است
+  // (backend/supabase/books.sql): هر کس فقط وقتی می‌تواند بخواند که مدیر کتاب را «نمایش برای همه» کرده باشد؛ مدیر وارد‌شده همیشه.
+  const isDb = key => BOOKS.find(b => b.key === key)?.db;
+  async function dbGet(key, path) {
+    const c = window.APP_CONFIG || {};
+    try { await window.adminSession?.fresh?.(); } catch {}
+    const tok = (typeof adminToken !== 'undefined' && adminToken) || c.SUPABASE_ANON_KEY;
+    const r = await fetch(`${c.SUPABASE_URL}/rest/v1/book_texts?select=body&book=eq.${key}&path=eq.${encodeURIComponent(path)}`, { headers: { apikey: c.SUPABASE_ANON_KEY, Authorization: `Bearer ${tok}` }, cache: 'no-store' });
+    if (!r.ok) throw Error(r.status);
+    const a = await r.json();
+    if (!a.length) throw Object.assign(Error('locked'), { locked: true });
+    return a[0].body;
+  }
+  const load = (key, f, path) => isDb(key) ? dbGet(key, path) : fetch(f).then(r => { if (!r.ok) throw Error(r.status); return r.json(); });
+  const getIndex = key => idx[key] || (idx[key] = load(key, `books/${key}/index.json`, 'index').catch(e => { delete idx[key]; throw e; }));
   const getItem = (key, part, n) => {
     const f = `books/${key}/${part}/${pad3(n)}.json`;
-    return files[f] || (files[f] = fetch(f).then(r => { if (!r.ok) throw Error(r.status); return r.json(); }).catch(e => { delete files[f]; throw e; }));
+    return files[f] || (files[f] = load(key, f, `${part}/${pad3(n)}`).catch(e => { delete files[f]; throw e; }));
   };
   // ترجمه‌های دیگر (جز مترجم اول) در کتاب‌هایی که trFiles دارند جدا هستند: books/<کتاب>/tr/<مترجم>/<بخش>/<شماره>.json
   // (tools/books/split_translations.py)؛ فقط ترجمه برگزیده دانلود و به بندها افزوده می‌شود.
@@ -127,10 +142,10 @@ body.bk-lock{overflow:hidden}
   }
   async function renderSheet() {
     const b = BOOKS.find(x => x.key === sheetBook);
-    shade.innerHTML = `<div class="bk-box" role="dialog" aria-modal="true" aria-label="${esc(b.title)}"><button type="button" class="bk-x" data-bk="close" aria-label="بستن">✕</button><h2>${esc(b.title)}</h2><p class="bk-sub">${esc(b.sub)}</p><div class="bk-in"><p class="bk-note">در حال بارگذاری…</p></div></div>`;
+    shade.innerHTML = `<div class="bk-box" role="dialog" aria-modal="true" aria-label="${esc(b.title)}"><button type="button" class="bk-x" data-bk="close" aria-label="بستن">✕</button><h2>${esc(b.title)}</h2><p class="bk-sub">${esc(b.sub)}</p>${b.review && !window.books.isPublic(b) ? '<p class="bk-note bk-hid">🔒 فقط مدیر این کتاب را می‌بیند (در انتظار اجازه نشر). نمایش برای همه: مدیریت › تنظیمات › کتاب‌های در انتظار اجازه.</p>' : ''}<div class="bk-in"><p class="bk-note">در حال بارگذاری…</p></div></div>`;
     let ix;
     try { ix = await getIndex(sheetBook); }
-    catch { if (shade) shade.querySelector('.bk-in').innerHTML = '<p class="bk-note">فهرست کتاب دریافت نشد. اینترنت را بررسی کنید و دوباره امتحان کنید.</p>'; return; }
+    catch (e) { if (shade) shade.querySelector('.bk-in').innerHTML = e.locked ? '<p class="bk-note">این کتاب هنوز برای همه منتشر نشده است. مدیر پس از ورود به بخش مدیریت آن را می‌بیند.</p>' : '<p class="bk-note">فهرست کتاب دریافت نشد. اینترنت را بررسی کنید و دوباره امتحان کنید.</p>'; return; }
     if (!shade || sheetBook !== ix.key) return;
     const last = read(LAST, {})[ix.key];
     if (!tab || !ix.parts.some(p => p.id === tab)) tab = last?.part && ix.parts.some(p => p.id === last.part) ? last.part : ix.parts[0].id;
