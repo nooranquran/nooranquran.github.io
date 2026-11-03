@@ -5,7 +5,7 @@ self.window = self; importScripts('config.js');
 const cfg = self.APP_CONFIG || {};
 
 const CACHE = 'hezb-v2';
-const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'portions.json', 'Vazirmatn.woff2', 'IranNastaliq2.woff2'];
+const SHELL = ['./', 'index.html', 'config.js', 'manifest.webmanifest', 'icon-192.png', 'portions.json', 'Vazirmatn.woff2', 'IranNastaliq3.woff2'];
 // background.jpg (ظاهر قبلی) از پیش ذخیره نمی‌شود تا نصب برنامه ۲۰۰ کیلوبایت سبک‌تر شود؛ اگر کسی آن ظاهر را برگزید، بار اول ذخیره می‌شود.
 
 // اسکریپت‌های صفحه (با شماره نسخه‌شان، مثل app.js?v=7) هم از همان index.html برداشته و ذخیره می‌شوند
