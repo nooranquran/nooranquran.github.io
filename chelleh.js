@@ -416,7 +416,7 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
     if (done) {
       box.innerHTML = top(t.title) + `<div class="chs-ok"><div class="chs-check">✓</div><p class="chl-big">ثبت‌نام شد. قبول باشد.</p>
 <p>${hezbAsReserve ? 'ظرفیت ۱۲۰ نفر کامل بود و شما در فهرست رزرو هستید. اگر کسی انصراف دهد، شناسه او به شما می‌رسد و در بخش «ثبت‌نام دوره جدید» همین سایت نشان داده می‌شود.' : 'وقتی ظرفیت ۱۲۰ نفر کامل شد، شناسه شما (عددی از ۱ تا ۱۲۰) و تاریخ شروع در بخش «ثبت‌نام دوره جدید» همین سایت نشان داده می‌شود.'}</p>
-<p class="chl-note">کد پیگیری: <span class="chs-code">${fa(done)}</span><br>این کد روی همین گوشی ذخیره شد.</p></div>${window.sitePush?.hint() || ''}
+<p class="chl-note">کد پیگیری: <span class="chs-code">${fa(done)}</span><br>این کد روی همین گوشی ذخیره شد. آن را به کسی ندهید؛ هر کس این کد را داشته باشد می‌تواند به جای شما تیک بزند یا انصراف دهد.</p></div>${window.sitePush?.hint() || ''}
 <button type="button" class="chs-main" data-hz-go>دیدن ثبت‌نام من</button>`;
       return;
     }

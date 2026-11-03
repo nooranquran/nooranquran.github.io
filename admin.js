@@ -58,7 +58,8 @@ ${quick ? '<div class="jd-quick"><button type="button" data-q="0">امروز</bu
 
   // ---------- ارتباط با Supabase ----------
   const ERR = window.sbErrors = Object.assign(window.sbErrors || {}, {
-    not_admin: 'این حساب دسترسی مدیر ندارد. اگر ایمیل مدیر دیگری است، از «تنظیمات › مدیران» اضافه‌اش کنید.'
+    not_admin: 'این حساب دسترسی مدیر ندارد. اگر ایمیل مدیر دیگری است، از «تنظیمات › مدیران» اضافه‌اش کنید.',
+    net_limit: 'از این اینترنت در چند دقیقه گذشته درخواست زیادی رسیده است. لطفاً کمی بعد دوباره امتحان کنید.'
   });
   const SETUP = 'این بخش هنوز در Supabase راه‌اندازی نشده است: فایل backend/supabase/registration.sql را در SQL Editor اجرا کنید.';
   const recent = new Map(), forget = () => { recent.clear(); inflight.clear(); recent.gen = (recent.gen || 0) + 1; };
