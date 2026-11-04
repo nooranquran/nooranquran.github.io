@@ -1,4 +1,4 @@
-// ختم قرآن موازی (گروهی)، منوی ☰ › قرآن، پس از «قرآن آزاد» و «ختم قرآن شخصی»؛ پیوند ?pk=main.
+// ختم قرآن پیوسته و دسته‌جمعی، منوی ☰ › قرآن، پس از «قرآن آزاد» و «ختم قرآن شخصی»؛ پیوند ?pk=main.
 // هر کس (عضو حزب‌خوانی باشد یا نه) می‌گوید امروز چند صفحه یا چند آیه می‌خواند؛ از اولین جای باز همان‌قدر به او داده می‌شود
 // تا دو نفر یک بخش را نخوانند. تا پایان روز بعد باید «خواندم» بزند (همه یا بخشی)، وگرنه بخش آزاد می‌شود و به نفر بعد می‌رسد.
 // وقتی همه قرآن خوانده شد، آن ختم کامل است و ختم بعدی ادامه دارد؛ اگر خواننده زیاد باشد، چند ختم هم‌زمان پیش می‌رود.
@@ -44,7 +44,7 @@
     pk_not_found: 'این ختم پیدا نشد.',
     khatm_limit: 'کمی صبر کنید و دوباره امتحان کنید.',
     net: 'ارتباط با سرور برقرار نشد. اینترنت را بررسی کنید و دوباره امتحان کنید.',
-    nosql: 'ختم موازی هنوز در سرور راه‌اندازی نشده است. کمی بعد دوباره سر بزنید.'
+    nosql: 'ختم دسته‌جمعی هنوز در سرور راه‌اندازی نشده است. کمی بعد دوباره سر بزنید.'
   };
   const errText = e => e?.code === 'msg' ? e.message : ERR[e?.code] || ERR[e?.message] || 'انجام نشد. لطفاً دوباره امتحان کنید.';
 
@@ -133,10 +133,10 @@ body.pk-lock{overflow:hidden}`;
     shade.hidden = false; document.body.classList.add('pk-lock');
     try { if (!history.state?.pk) history.pushState({ pk: 1 }, ''); } catch {}
     lastFinished = null; afterDone = false;
-    box().innerHTML = '<button type="button" class="pk-x" data-pk="close" aria-label="بستن">✕</button><h2>ختم قرآن موازی</h2><p class="pk-sub">در حال دریافت…</p>';
+    box().innerHTML = '<button type="button" class="pk-x" data-pk="close" aria-label="بستن">✕</button><h2>ختم قرآن پیوسته و دسته‌جمعی</h2><p class="pk-sub">در حال دریافت…</p>';
     try { await getIx(); } catch {}
     try { await refresh(); render(); }
-    catch (e) { box().innerHTML = `<button type="button" class="pk-x" data-pk="close" aria-label="بستن">✕</button><h2>ختم قرآن موازی</h2><p class="pk-sub">${esc(errText(e))}</p><div class="pk-btns"><button type="button" data-pk="retry">دوباره</button></div>`; }
+    catch (e) { box().innerHTML = `<button type="button" class="pk-x" data-pk="close" aria-label="بستن">✕</button><h2>ختم قرآن پیوسته و دسته‌جمعی</h2><p class="pk-sub">${esc(errText(e))}</p><div class="pk-btns"><button type="button" data-pk="retry">دوباره</button></div>`; }
     pushState();
   }
   function close(fromHistory) {
@@ -163,7 +163,7 @@ body.pk-lock{overflow:hidden}`;
     const map = c => segs.filter(s => s.c === c).map(s => `<i class="${s.d ? 'd' : mineIds.has(`${s.c}:${s.f}`) ? 'm' : 't'}" style="right:${pct(s.f)}%;width:${Math.max(0.35, pct(s.t - s.f))}%"></i>`).join('');
     const openA = TOTAL - (cur.done || 0) - (cur.taken || 0);
     const after = cyc.filter(c => c.c > v.cycle);
-    let h = '<button type="button" class="pk-x" data-pk="close" aria-label="بستن">✕</button><h2>ختم قرآن موازی</h2><p class="pk-sub">هر کس هر روز به اندازه فرصتش چند صفحه یا آیه برمی‌دارد و می‌خواند؛ با هم قرآن ختم می‌شود، گاهی در چند روز و گاهی چند بار در یک روز</p>';
+    let h = '<button type="button" class="pk-x" data-pk="close" aria-label="بستن">✕</button><h2>ختم قرآن پیوسته و دسته‌جمعی</h2><p class="pk-sub">هر کس هر روز به اندازه فرصتش چند صفحه یا آیه برمی‌دارد و می‌خواند؛ با هم قرآن ختم می‌شود، گاهی در چند روز و گاهی چند بار در یک روز</p>';
     if (lastFinished) h += `<div class="pk-card ok" style="text-align:center"><p class="pk-big">🎉 با خواندن شما، ختم ${toFa(lastFinished)}‌ام قرآن کامل شد. قبول باشد.</p>${window.contentPlus?.shown('khatmdua') ? '<div class="pk-btns"><button type="button" data-pk="khatmdua">📖 دعای ختم قرآن (صحیفه سجادیه، دعای ۴۲)</button></div>' : ''}</div>`;
     // وضعیت ختم جاری
     h += `<div class="pk-card"><h3>ختم ${toFa(v.cycle)}${v.completed ? ` <small class="pk-mute" style="font-weight:400">(تاکنون ${toFa(v.completed)} ختم کامل شده)</small>` : ''}</h3>
@@ -197,7 +197,7 @@ ${v.my_read ? `<p class="pk-mute">سهم شما تاکنون: حدود ${toFa(Ma
     } else h += '<div class="pk-card"><p class="pk-mute">سه بخش نخوانده دست شماست؛ برای برداشتن بخش تازه، اول یکی را تمام کنید یا پس دهید.</p></div>';
     // اعلان
     if (window.sitePush?.supported && cfg.VAPID_PUBLIC_KEY) h += `<div class="pk-card"><h3>🔔 اعلان</h3><p class="pk-mute" id="pkPushLine">${pushOn() ? 'روشن است: شب آخر مهلت یادآوری می‌شود و هر روز اگر بخشی باز بود و بخشی دست شما نبود، خبر می‌دهیم.' : 'یادآوری شب آخر مهلت، و هر روز خبر بخش‌های باز (اگر بخشی دست شما نیست).'}</p>
-<div class="pk-btns"><button type="button" class="pk-light" data-pk="${pushOn() ? 'pushOff' : 'pushOn'}">${pushOn() ? 'خاموش کردن اعلان ختم موازی' : 'روشن کردن اعلان'}</button></div></div>`;
+<div class="pk-btns"><button type="button" class="pk-light" data-pk="${pushOn() ? 'pushOff' : 'pushOn'}">${pushOn() ? 'خاموش کردن اعلان ختم دسته‌جمعی' : 'روشن کردن اعلان'}</button></div></div>`;
     if (v.recent?.length) h += `<div class="pk-card"><h3>ختم‌های کامل اخیر</h3>${v.recent.map(r => `<p class="pk-mute">ختم ${toFa(r.c)}: ${esc(window.J ? J.label(tehran(Date.parse(r.at))) : tehran(Date.parse(r.at)))}، با ${toFa(r.readers)} خواننده</p>`).join('')}</div>`;
     h += `<div class="pk-btns"><button type="button" class="pk-light" data-pk="share">📨 فرستادن پیوند ختم برای دیگران</button></div>`;
     const top = box().scrollTop;
@@ -238,7 +238,7 @@ ${v.my_read ? `<p class="pk-mute">سهم شما تاکنون: حدود ${toFa(Ma
   function readClaim(m) {
     if (!ix) return toast('بارگذاری متن قرآن انجام نشد. اینترنت را بررسی کنید.');
     window.quranReader.openRange({
-      title: 'ختم قرآن موازی', sub: rangeText(m.f, m.t), from: m.f, to: m.t,
+      title: 'ختم قرآن پیوسته و دسته‌جمعی', sub: rangeText(m.f, m.t), from: m.f, to: m.t,
       endText: m.t >= TOTAL ? 'پایان قرآن کریم. قبول باشد.' : 'پایان بخش شما. قبول باشد.', endButton: 'خواندم؛ ثبت',
       onEnd: () => done(m.id).catch(e => toast(errText(e)))
     });
@@ -279,12 +279,12 @@ ${v.my_read ? `<p class="pk-mute">سهم شما تاکنون: حدود ${toFa(Ma
     }
     if (a === 'pushOn') return act(b, async () => {
       try { await pushEnable(); } catch (e) { if (e.message === 'denied' || e.message === 'dismissed') throw Object.assign(Error('x'), { code: 'msg', message: 'اجازه اعلان داده نشد. از تنظیمات مرورگر یا گوشی، اعلان این سایت را مجاز کنید.' }); throw e; }
-      render(); toast('اعلان ختم موازی روشن شد.');
+      render(); toast('اعلان ختم دسته‌جمعی روشن شد.');
     });
     if (a === 'pushOff') return act(b, async () => { const s = await currentSub(); if (s) await rpc('pk_push_off', { p_endpoint: s.endpoint }, false); ls.set('pkPush', false); render(); });
     if (a === 'share') {
-      const url = `${location.origin}${location.pathname}?pk=${CIRCLE}`, text = 'ختم قرآن موازی نوران: هر روز چند صفحه یا چند آیه بردارید و بخوانید تا با هم قرآن ختم شود.';
-      if (navigator.share) return navigator.share({ title: 'ختم قرآن موازی', text, url }).catch(() => {});
+      const url = `${location.origin}${location.pathname}?pk=${CIRCLE}`, text = 'ختم قرآن پیوسته و دسته‌جمعی نوران: هر روز چند صفحه یا چند آیه بردارید و بخوانید تا با هم قرآن ختم شود.';
+      if (navigator.share) return navigator.share({ title: 'ختم قرآن پیوسته و دسته‌جمعی', text, url }).catch(() => {});
       try { await navigator.clipboard.writeText(`${text}\n${url}`); toast('پیوند کپی شد.'); } catch { toast(url); }
     }
   }
@@ -301,7 +301,7 @@ ${v.my_read ? `<p class="pk-mute">سهم شما تاکنون: حدود ${toFa(Ma
   window.pkMenu = () => {
     // وضعیت هر ده دقیقه یک بار در پس‌زمینه تازه می‌شود
     if (Date.now() - loadedAt > 6e5 && !loading) { loadedAt = Date.now(); refresh().catch(() => {}); }
-    return `<button type="button" class="sm-item" data-pk-open><span class="sm-ic">🤝</span><span>ختم قرآن موازی (گروهی)<small>${esc(sub())}</small></span><span class="sm-go">‹</span></button>`;
+    return `<button type="button" class="sm-item" data-pk-open><span class="sm-ic">🤝</span><span>ختم قرآن پیوسته و دسته‌جمعی<small>${esc(sub())}</small></span><span class="sm-go">‹</span></button>`;
   };
   document.addEventListener('click', e => {
     if (!e.target.closest('.sm [data-pk-open]')) return;

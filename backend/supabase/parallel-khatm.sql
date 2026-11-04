@@ -1,4 +1,4 @@
--- ختم موازی قرآن (pkhatm.js، منوی ☰ › قرآن › «ختم قرآن موازی (گروهی)»، پیوند ?pk=main).
+-- ختم قرآن دسته‌جمعی (pkhatm.js، منوی ☰ › قرآن › «ختم قرآن پیوسته و دسته‌جمعی»، پیوند ?pk=main).
 -- اجرا در Supabase SQL Editor پس از registration.sql، reminders.sql و khatm.sql (از khatm_priv.dev/hit/ip و push_check استفاده می‌کند).
 -- اجرای دوباره بی‌خطر است و چیزی را پاک نمی‌کند.
 --
@@ -18,7 +18,7 @@ create table if not exists public.pk_circles (
   completed integer not null default 0,    -- تعداد ختم‌های کامل
   created_at timestamptz not null default now()
 );
-insert into public.pk_circles (id, title, niyyat) values ('main', 'ختم قرآن موازی نوران', '')
+insert into public.pk_circles (id, title, niyyat) values ('main', 'ختم قرآن پیوسته و دسته‌جمعی نوران', '')
 on conflict (id) do nothing;
 
 create table if not exists public.pk_claims (
@@ -49,7 +49,7 @@ create table if not exists public.pk_cycles (
   primary key (circle_id, cycle)
 );
 
--- اشتراک اعلان ختم موازی (جدا از push_subscriptions تا با لغو اعلان‌های دیگر پاک نشود).
+-- اشتراک اعلان ختم دسته‌جمعی (جدا از push_subscriptions تا با لغو اعلان‌های دیگر پاک نشود).
 create table if not exists public.pk_push (
   endpoint text primary key check (char_length(endpoint) <= 1000),
   p256dh text not null,
@@ -229,7 +229,7 @@ begin
   return pk_priv.view(p_id, dh);
 end $$;
 
--- روشن کردن اعلان ختم موازی برای این گوشی؛ بخش‌های برداشته‌شده همین گوشی هم یادآوری مهلت می‌گیرند.
+-- روشن کردن اعلان ختم دسته‌جمعی برای این گوشی؛ بخش‌های برداشته‌شده همین گوشی هم یادآوری مهلت می‌گیرند.
 create or replace function public.pk_push_on(p_id text, p_device text, p_endpoint text, p_p256dh text, p_auth text, p_open boolean default true)
 returns void language plpgsql security definer set search_path = public, pg_temp as $$
 declare dh text := khatm_priv.dev(p_device);
@@ -261,7 +261,7 @@ create or replace function public.pk_push_due() returns table (endpoint text, p2
 language sql stable security definer set search_path = public, pg_temp as $$
   with day as (select (now() at time zone 'Asia/Tehran') as t)
   select p.endpoint, p.p256dh, p.auth, 'due:' || c.id,
-         'مهلت بخش ختم موازی قرآن',
+         'مهلت بخش ختم قرآن دسته‌جمعی',
          'بخشی که برداشته‌اید (' || case when c.unit = 'page' then (pk_priv.page_of(c.a_to - 1) - pk_priv.page_of(c.a_from) + 1)::text || ' صفحه' else (c.a_to - c.a_from)::text || ' آیه' end
            || ') تا پایان امشب مهلت دارد. اگر خواندید «خواندم» را بزنید (اگر بخشی را خواندید، همان‌قدر را ثبت کنید)؛ وگرنه به نفر دیگری داده می‌شود.',
          '?pk=' || c.circle_id
