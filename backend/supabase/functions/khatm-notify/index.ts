@@ -1,4 +1,4 @@
-// اعلان‌های ختم قرآن موازی (pkhatm.js و backend/supabase/parallel-khatm.sql): Supabase Cron هر ۱۵ دقیقه با x-cron-secret صدا می‌زند.
+// اعلان‌های ختم قرآن پیوسته و دسته‌جمعی (pkhatm.js و backend/supabase/parallel-khatm.sql): Supabase Cron هر ۱۵ دقیقه با x-cron-secret صدا می‌زند.
 // چه بفرستد را pk_push_due در پایگاه داده حساب می‌کند: یادآوری شب آخر مهلت هر بخش، و روزی یک بار «بخش‌های باز مانده» از ساعت ۱۰.
 // هر اعلان یک بار (جدول pk_push_sent). Secrets همان daily-reminders: VAPID_PUBLIC_KEY، VAPID_PRIVATE_KEY، CRON_SECRET، SITE_URL (اختیاری).
 // با JWT verification خاموش deploy شود.
