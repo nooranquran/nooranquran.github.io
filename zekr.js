@@ -122,16 +122,18 @@
 .zk-goal+.zk-goal{margin-top:6px}
 .zk-goal.on{border-color:var(--emerald);box-shadow:0 0 0 2px var(--emerald) inset}
 .zk-goal b{color:var(--deep);font-size:15.5px}
+.zk-goal .zk-gz{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--ink);font-size:14px;line-height:1.5}
 .zk-goal .zk-prog{height:10px;margin:6px 0 2px;border-radius:999px;background:#ece3cf;overflow:hidden}
 .zk-goal .zk-prog i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--emerald));transition:width .4s}
 .zk-goal small{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:13px}
 .zk-box .zk-pick{flex:none;display:flex;align-items:center;gap:8px;width:100%;height:48px;background:#fff;color:var(--deep);border:1px solid var(--gold);border-radius:var(--r-card);font-size:16px}
 .zk-pick span{color:var(--muted);font-weight:400}.zk-pick b{flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis}
-.zk-box .zk-tap{flex:1;min-height:0;width:100%;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;white-space:normal;background:radial-gradient(circle at 50% 55%,#fff 0,var(--cream) 75%);color:var(--deep);border:1px solid var(--gold);border-radius:var(--r-panel);font-weight:400;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;transition:transform .06s}
+.zk-box .zk-tap{flex:1;min-height:0;width:100%;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:10px;padding:12px;overflow:hidden;container-type:size;white-space:normal;background:radial-gradient(circle at 50% 55%,#fff 0,var(--cream) 75%);color:var(--deep);border:1px solid var(--gold);border-radius:var(--r-panel);font-weight:400;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;transition:transform .06s}
 .zk-tap:active{transform:scale(.985)}
+@media (max-height:760px){.zk-box .zk-tap{gap:6px;padding:8px}.zk-text{font-size:20px;line-height:1.6}.zk-box .zk-goal{padding:6px 12px;line-height:1.45}.zk-goal .zk-prog{height:8px;margin:4px 0 1px}}
 .zk-tap:focus-visible{outline:3px solid var(--emerald);outline-offset:2px}
 .zk-text{max-width:100%;font:600 24px/1.9 Vazirmatn,Tahoma,sans-serif;text-align:center;overflow-wrap:anywhere}
-.zk-ring{position:relative;width:min(52vw,210px,32dvh);aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:conic-gradient(var(--emerald) var(--p,0%),#e8dfcc 0)}
+.zk-ring{position:relative;flex:none;width:min(52vw,210px,32dvh);width:max(110px,min(52vw,210px,calc(100cqh - 150px)));aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:conic-gradient(var(--emerald) var(--p,0%),#e8dfcc 0)}
 .zk-ring::before{content:"";position:absolute;inset:10px;border-radius:50%;background:#fffaf0}
 .zk-ring>*{position:relative}
 .zk-ring b{font-size:clamp(44px,13vw,64px);line-height:1.1;font-weight:700}
@@ -196,7 +198,7 @@ body.zk-lock{overflow:hidden}
     const el = $('.zk-goals'); if (!el) return;
     el.innerHTML = goals.slice(0, 2).map(g => {
       const t = shownTotal(g), p = Math.min(100, t / g.target * 100), on = S.sel === 'g' + g.id;
-      return `<button type="button" class="zk-goal${on ? ' on' : ''}" data-zk-goal="${g.id}"><b>🤲 نذر جمعی: ${esc(g.title)}</b>
+      return `<button type="button" class="zk-goal${on ? ' on' : ''}" data-zk-goal="${g.id}"><b>🤲 نذر جمعی: ${esc(g.title)}</b><span class="zk-gz">${esc(g.zekr)}</span>
 <div class="zk-prog" role="progressbar" aria-valuemin="0" aria-valuemax="${g.target}" aria-valuenow="${t}"><i style="width:${p.toFixed(2)}%"></i></div>
 <small><span>${fa(t)} از ${fa(g.target)}${t >= g.target ? ' (به هدف رسید؛ قبول باشد)' : ` (${fa(Math.floor(p))}٪)`}</span><span>${on ? 'ذکرهای شما اینجا جمع می‌شود' : 'برای شرکت بزنید'}</span></small></button>`;
     }).join('');
