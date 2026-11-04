@@ -221,12 +221,12 @@ ${last ? `<div class="qf-card qf-resume"><h3>دفعه قبل تا اینجا خ�
   }
 
   // ---------- منو ----------
-  // در منو کنار دوره‌های قرآن (حزب‌خوانی، جزءخوانی، روزی یک صفحه) در chelleh.js؛
+  // در منو کنار دوره‌های قرآن (حزب‌خوانی، جزءخوانی، روزی یک صفحه) در chelleh.js، و پس از آن «ختم قرآن شخصی» (personal.js) و «ختم قرآن موازی» (pkhatm.js)؛
   // اگر آن فهرست نیامد (مثلاً بدون اینترنت)، همین‌جا جداگانه.
   function menuItem() {
     const last = load();
     const sub = last && ix ? `ادامه از ${placeText(last.g)}` : last ? 'ادامه از جایی که خواندید' : 'از هر سوره، آیه، صفحه یا جزء';
-    return `<button type="button" class="sm-item" data-qf-open><span class="sm-ic">📖</span><span>قرآن آزاد<small>${esc(sub)}</small></span><span class="sm-go">‹</span></button>`;
+    return `<button type="button" class="sm-item" data-qf-open><span class="sm-ic">📖</span><span>قرآن آزاد<small>${esc(sub)}</small></span><span class="sm-go">‹</span></button>` + (window.pqMenu?.() || '') + (window.pkMenu?.() || '');
   }
   window.siteMenu?.section({
     id: 'quranFree', order: 2,
