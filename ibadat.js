@@ -248,7 +248,7 @@ ${await notifyHtml(type, when)}`;
     render(box) {
       const k = khatm(), today = tehranToday(), i = k ? k.findIndex(d => d >= today) : -1;
       const sub = i >= 0 ? (k[i] === today ? `امشب شب ${NIGHTS[i]} ختم` : `شب ${NIGHTS[i]}: ${dateFa(k[i])}`) : 'هر ماه قمری، چهار شب جمعه';
-      box.innerHTML = `<h3>اعمال و ختم‌ها</h3>
+      box.innerHTML = `<h3>اعمال و ختم‌ها</h3>${window.ppMenu?.() || ''}
 <button type="button" class="sm-item" data-ib-open="javad_wed"><span class="sm-ic">🤲</span><span>نماز حاجت امام جواد (ع)<small>چهارشنبه‌ها بعد از نماز عصر</small></span><span class="sm-go">‹</span></button>
 <button type="button" class="sm-item" data-ib-open="ommolbanin"><span class="sm-ic">📖</span><span>ختم یاسین حضرت ام‌البنین (س)<small>${sub}</small></span><span class="sm-go">‹</span></button>
 ${Object.entries(OCCS).map(([k, o]) => `<button type="button" class="sm-item" data-ib-open="${k}"><span class="sm-ic">🌙</span><span>${o.title}<small>${o.sub}</small></span><span class="sm-go">‹</span></button>`).join('')}`;

@@ -398,7 +398,7 @@ ${mfBtn('442', '🧎', 'نماز برای والدین و اموات', 'مفات
 
   // ---------- پشتیبان و انتقال ----------
   // فقط داده‌های شخصی خود کاربر؛ ورود به حساب، مدیر، شناسه دستگاه‌ها و حافظه‌های موقت منتقل نمی‌شوند.
-  const KEEP = ['me', 'reportedDays', 'regCodes', 'chlCodes', 'chlName', 'chlEmail', 'zekrState', 'zekrStats', 'khatmIds', 'khatmName', 'readPlan', 'nmDays',
+  const KEEP = ['me', 'reportedDays', 'regCodes', 'chlCodes', 'chlName', 'chlEmail', 'zekrState', 'zekrStats', 'khatmIds', 'khatmName', 'readPlan', 'pqKhatm', 'ppList', 'pkPref', 'nmDays',
     'prayerLoc', 'qrSaved', 'qrPlus', 'quranFree', 'quranReader', 'chlReader', 'bookReader', 'bookLast', 'mafatihLast', 'duaFav', 'crPos', 'comfort', 'featHide',
     'secHide', 'bgPick', 'bgMine', 'audioPrefs', 'autoScroll', 'lastRead', 'menuRecent', 'searchRecent', 'wird', 'qaza', 'ehdaMine', 'laylNames', 'lite', 'learnPlans'];
   function backup() {
