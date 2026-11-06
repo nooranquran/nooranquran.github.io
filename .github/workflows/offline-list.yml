@@ -1,0 +1,31 @@
+# فهرست «استفاده بدون اینترنت» (offline.json) را پس از هر تغییر متن‌ها یا اسکریپت‌های سایت دوباره می‌سازد (tools/make-offline-list.py).
+name: Offline file list
+
+on:
+  push:
+    branches: [main]
+    paths: ['quran/**', 'books/**', 'chelleh/**', '*.js', '*.css', 'bg/**', 'tools/make-offline-list.py']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: offline-list
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/make-offline-list.py
+      - name: Commit if changed
+        run: |
+          git diff --quiet -- offline.json && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add offline.json
+          git commit -m 'Update the offline file list'
+          for i in 1 2 3; do git pull --rebase -q origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          exit 1
