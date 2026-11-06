@@ -71,6 +71,58 @@ self.addEventListener('fetch', e => {
   e.respondWith(net().catch(offline));
 });
 
+// ---------- استفاده بدون اینترنت (offline.js، فهرست بسته‌ها در offline.json از tools/make-offline-list.py) ----------
+// پیام‌های صفحه: {type:'offline-status'} وضعیت هر بسته؛ {type:'offline-get', packs} دانلود فایل‌های ذخیره‌نشده؛ {type:'offline-drop', packs} پاک کردن.
+// فایل‌ها با همان نشانی که صفحه می‌خواهد (بی ?v=) ذخیره می‌شوند؛ اگر کار نیمه بماند، بار بعد فقط فایل‌های باقی‌مانده گرفته می‌شوند.
+let offlineList = null, offlineBusy = null;
+async function getOfflineList(fresh) {
+  if (!offlineList || fresh) {
+    try { offlineList = await (await fetch('offline.json', { cache: 'no-store' })).json(); (await caches.open(CACHE)).put('offline.json', new Response(JSON.stringify(offlineList))); }
+    catch { const r = await caches.match('offline.json'); if (!r) throw new Error('offline.json'); offlineList = await r.json(); }
+  }
+  return offlineList;
+}
+const absUrl = f => new URL(f, self.registration.scope).href;
+async function cachedSet() { return new Set((await (await caches.open(CACHE)).keys()).map(r => r.url.split('?')[0])); }
+async function offlineStatus() {
+  const list = await getOfflineList(), have = await cachedSet();
+  return { v: list.v, busy: !!offlineBusy, packs: list.packs.map(p => ({ id: p.id, title: p.title, sub: p.sub, download: p.download, size: p.size, total: p.files.length, have: p.files.filter(f => have.has(absUrl(f))).length })) };
+}
+const tell = msg => self.clients.matchAll({ type: 'window' }).then(l => l.forEach(c => c.postMessage(msg)));
+async function offlineGet(ids) {
+  const list = await getOfflineList(true), have = await cachedSet(), c = await caches.open(CACHE);
+  const want = [...new Set(list.packs.filter(p => ids.includes(p.id)).flatMap(p => p.files))].filter(f => !have.has(absUrl(f)));
+  let done = 0, failed = 0, last = 0, i = 0;
+  const total = want.length;
+  async function worker() {
+    while (i < want.length) {
+      const f = want[i++];
+      try { const r = await fetch(absUrl(f), { cache: 'no-cache' }); if (r.ok) await c.put(absUrl(f), r); else if (r.status !== 404) failed++; } catch { failed++; }
+      done++;
+      if (Date.now() - last > 700) { last = Date.now(); tell({ type: 'offline-progress', done, total }); }
+    }
+  }
+  await Promise.all(Array.from({ length: 6 }, worker));
+  const res = { type: 'offline-done', v: list.v, packs: ids, total, failed };
+  tell(res);
+  return res;
+}
+async function offlineDrop(ids) {
+  const list = await getOfflineList(), c = await caches.open(CACHE);
+  const keep = new Set(list.packs.filter(p => !ids.includes(p.id)).flatMap(p => p.files).map(absUrl));
+  const drop = new Set(list.packs.filter(p => ids.includes(p.id)).flatMap(p => p.files).map(absUrl).filter(u => !keep.has(u)));
+  for (const r of await c.keys()) if (drop.has(r.url.split('?')[0])) await c.delete(r);
+  tell({ type: 'offline-dropped', packs: ids });
+}
+self.addEventListener('message', e => {
+  const d = e.data || {}, reply = m => e.source?.postMessage(m);
+  if (d.type === 'offline-status') e.waitUntil(offlineStatus().then(s => reply({ type: 'offline-status', ...s })).catch(() => reply({ type: 'offline-status', error: true })));
+  else if (d.type === 'offline-get' && Array.isArray(d.packs)) {
+    if (!offlineBusy) offlineBusy = offlineGet(d.packs).catch(() => tell({ type: 'offline-done', error: true, packs: d.packs })).finally(() => { offlineBusy = null; });
+    e.waitUntil(offlineBusy);
+  } else if (d.type === 'offline-drop' && Array.isArray(d.packs)) e.waitUntil(offlineDrop(d.packs));
+});
+
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
