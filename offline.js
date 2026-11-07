@@ -1,6 +1,6 @@
 // استفاده بدون اینترنت: «منوی ☰ › تنظیمات › استفاده بدون اینترنت» برگه‌ای باز می‌کند که هر بسته متن (offline.json) را
 // روی همین گوشی ذخیره یا پاک می‌کند؛ کار ذخیره را سرویس‌ورکر (sw.js) انجام می‌دهد. صوت‌ها در هیچ بسته‌ای نیستند.
-// در برنامه نصب‌شده (اندروید، یا افزودن به صفحه اصلی) بسته اصلی (core، حدود ۸ مگ) بار اولی که با اینترنت باز شود، بی‌صدا ذخیره می‌شود؛
+// در برنامه نصب‌شده (اندروید، یا افزودن به صفحه اصلی) بسته اصلی و ترجمه‌های فارسی (core و tr-fa، حدود ۱۵ مگ) بار اولی که با اینترنت باز شود، بی‌صدا ذخیره می‌شود؛
 // اگر نیمه بماند بار بعد ادامه می‌یابد. با «حالت کم‌حجم» یا «صرفه‌جویی داده» گوشی، خودکار ذخیره نمی‌شود.
 // کلید localStorage ‎offlineDone‎: {بسته: نسخه offline.json} برای بسته‌هایی که کامل ذخیره شده‌اند.
 (function () {
@@ -100,13 +100,14 @@
     if (!inApp || lite() || !navigator.onLine || running) return;
     // پس از ذخیره کامل، فقط هفته‌ای یک بار نگاه می‌شود که متن تازه‌ای اضافه شده یا نه (offline.json حدود ۶۰ کیلوبایت است).
     const CK = 'offlineCheck', last = +(localStorage.getItem(CK) || 0);
-    if (done().core && Date.now() - last < 7 * 864e5) return;
+    const AUTO = ['core', 'tr-fa'];
+    if (AUTO.every(p => done()[p]) && Date.now() - last < 7 * 864e5) return;
     try { localStorage.setItem(CK, String(Date.now())); } catch {}
     try {
       const v = (await (await fetch('offline.json', { cache: 'no-store' })).json()).v;
-      if (done().core === v) return;
+      if (AUTO.every(p => done()[p] === v)) return;
     } catch { return; }
-    get(['core']);
+    get(AUTO);
   }
   const later = () => setTimeout(auto, 8000);
   if (document.readyState === 'complete') later(); else addEventListener('load', later, { once: true });
