@@ -221,6 +221,8 @@ ${''}.cr{--bg:#fbf6ea;--card:#fffdf7;--text:#1f1a14;--tr:#4b4036;--muted:#7a6d60
 .cr-bism{margin:18px 0 6px;text-align:center;font:normal calc(var(--qs)*1.05)/2 ChlArabic,Vazirmatn,serif}
 .cr-sec{padding:14px 2px;border-bottom:1px solid var(--line)}
 .cr-sec:last-child{border-bottom:0}
+.cr-sec.cr-on{background:rgba(199,154,69,.16);box-shadow:inset -3px 0 0 var(--gold);border-radius:8px}
+.cr-synced .cr-sec[data-i]{cursor:pointer}
 .cr-h{margin:26px 0 4px;padding-bottom:4px;text-align:center;color:var(--accent);font:normal 30px/1.6 SiteFont,Tahoma,serif;border-bottom:2px solid var(--gold)}
 .cr-note{margin:0 0 6px;color:var(--accent);font-weight:700;font-size:15px}
 .cr-sec.only{border:1px dashed var(--line);background:var(--card);padding:10px 12px;margin:14px 0}
@@ -882,7 +884,7 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
     reader.querySelector('.cr-aud select').addEventListener('change', e => {
       const list = current?.text?.audio || [], a = list[+e.target.value]; if (!a) return;
       prefs.audio = Object.assign(prefs.audio || {}, { [current.key]: a.url }); write(RKEY, prefs);
-      const au = reader.querySelector('.cr-aud audio'), was = !au.paused; au.src = a.url; if (was) au.play().catch(() => {});
+      const au = reader.querySelector('.cr-aud audio'), was = !au.paused; au.src = a.url; loadSync(a.url); if (was) au.play().catch(() => {});
     });
     const trChange = async (lang, id) => {
       prefs.trLang = lang; if (id !== undefined) prefs.trx = Object.assign(prefs.trx || {}, { [lang]: id }); write(RKEY, prefs);
@@ -891,10 +893,34 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
     };
     reader.querySelector('#crLang').addEventListener('change', e => trChange(e.target.value));
     reader.querySelector('#crTr').addEventListener('change', e => trChange(prefs.trLang || 'fa', e.target.value));
+    reader.querySelector('.cr-aud audio').addEventListener('timeupdate', () => onTime(true));
     reader.addEventListener('scroll', () => { const h = reader.scrollHeight - reader.clientHeight; reader.querySelector('.cr-prog').style.width = (h > 0 ? reader.scrollTop / h * 100 : 0) + '%'; }, { passive: true });
     window.addEventListener('popstate', () => { if (reader.classList.contains('show') && !history.state?.chl) closeReader(true); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && reader.classList.contains('show')) closeReader(); });
     return reader;
+  }
+  // هم‌خوانی متن با صوت (مثل قرآن‌خوان): برای audio/x.mp3 اگر audio/sync/x.json باشد، t[i] زمان شروع بند i است (ثانیه).
+  let sync = null, syncOn = -1;
+  function loadSync(url) {
+    sync = null; syncOn = -1; reader.classList.remove('cr-synced'); onTime();
+    const m = /^audio\/([\w-]+)\.mp3$/.exec(url || ''); if (!m) return;
+    fetch(`audio/sync/${m[1]}.json`).then(r => (r.ok ? r.json() : null)).then(d => {
+      if (!d || !Array.isArray(d.t) || reader.querySelector('.cr-aud audio').getAttribute('src') !== url) return;
+      sync = d.t; reader.classList.add('cr-synced'); onTime();
+    }).catch(() => {});
+  }
+  function onTime(follow) {
+    const au = reader.querySelector('.cr-aud audio'), now = au.currentTime;
+    let i = -1;
+    if (sync && now > 0) sync.forEach((v, k) => { if (v != null && v <= now + 0.2) i = k; });
+    if (i === syncOn && (i < 0 || reader.querySelector('.cr-sec.cr-on'))) return;
+    syncOn = i;
+    reader.querySelectorAll('.cr-sec.cr-on').forEach(e => e.classList.remove('cr-on'));
+    const el = i >= 0 && reader.querySelector(`.cr-sec[data-i="${i}"]`); if (!el) return;
+    el.classList.add('cr-on');
+    if (!follow || au.paused) return;
+    const r = el.getBoundingClientRect(), top = reader.querySelector('.cr-bar').getBoundingClientRect().bottom, bottom = reader.querySelector('.cr-aud').getBoundingClientRect().top || innerHeight;
+    if (r.top < top || r.bottom > bottom) r.height > bottom - top - 16 ? reader.scrollTo({ top: reader.scrollTop + r.top - top - 8, behavior: 'smooth' }) : el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   function applyPrefs() {
     reader.style.setProperty('--qs', prefs.size + 'px');
@@ -968,7 +994,7 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
       if (!s.ar) return `<div class="cr-sec only"><p class="cr-note">${esc(s.note)}</p></div>`;
       const n = c[i] || 0, rep = s.repeat ? `<div class="cr-count"><button type="button" data-count="${i}" class="${n >= s.repeat ? 'full' : ''}">${fa(n)} / ${fa(s.repeat)}</button><small>${n >= s.repeat ? 'کامل شد' : 'با هر بار خواندن بزنید'}</small>${n ? `<button type="button" class="cr-reset" data-reset="${i}">از نو</button>` : ''}</div>` : '';
       const f = tr ? tr.t[i] : s.fa;
-      return `<div class="cr-sec">${s.note ? `<p class="cr-note">${esc(s.note)}</p>` : ''}<p class="cr-ar" lang="ar" dir="rtl">${esc(arFix(s.ar))}</p>${f ? `<p class="cr-fa" lang="${lang}" dir="${dir}">${esc(f)}</p>` : ''}${rep}</div>`;
+      return `<div class="cr-sec" data-i="${i}">${s.note ? `<p class="cr-note">${esc(s.note)}</p>` : ''}<p class="cr-ar" lang="ar" dir="rtl">${esc(arFix(s.ar))}</p>${f ? `<p class="cr-fa" lang="${lang}" dir="${dir}">${esc(f)}</p>` : ''}${rep}</div>`;
     }).join('');
     if (m && state(m) === 'run') {
       const done = (m.marked || []).includes(today);
@@ -983,11 +1009,16 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
       const sel = aud.querySelector('select'), au = aud.querySelector('audio');
       let i = Math.max(0, list.findIndex(a => a.url === prefs.audio?.[current.key]));
       sel.innerHTML = list.map((a, k) => `<option value="${k}">${esc(a.name)}</option>`).join(''); sel.value = i;
-      if (au.getAttribute('src') !== list[i].url) au.src = list[i].url;
-    }
+      if (au.getAttribute('src') !== list[i].url) { au.src = list[i].url; loadSync(list[i].url); }
+    } else loadSync(null);
+    syncOn = -1; onTime();
   }
   async function onReaderClick(e) {
-    const b = e.target.closest('button'); if (!b) return;
+    const b = e.target.closest('button');
+    // وقتی صوت هم‌خوان شروع شده، زدن روی یک بند صوت را به همان بند می‌برد.
+    const au = reader.querySelector('.cr-aud audio'), sec = !b && sync && au.currentTime > 0 && e.target.closest('.cr-sec[data-i]');
+    if (sec && sync[sec.dataset.i] != null && !getSelection().toString()) { au.currentTime = sync[sec.dataset.i]; au.play().catch(() => {}); return; }
+    if (!b) return;
     const x = b.dataset.x;
     if (x === 'close') return closeReader();
     if (x === 'menu') return reader.querySelector('.cr-menu').classList.toggle('show');

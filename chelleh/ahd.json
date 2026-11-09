@@ -33,6 +33,7 @@
     { "note": "آنگاه سه بار بر ران خود دست می‌زنی، و در هر مرتبه می‌گویی:", "ar": "الْعَجَلَ الْعَجَلَ يَا مَوْلايَ يَا صَاحِبَ الزَّمَانِ", "fa": "شتاب کن، شتاب کن، ای مولای من، ای صاحب‌الزمان.", "repeat": 3}
   ],
   "audio": [
+    {"name": "علی فانی", "url": "audio/ahd-ali-fani.mp3"},
     {"name": "اباذر حلواجی", "url": "https://cdnmp3.hussainiat.com/hussvideo/Dua-e-Ahad-Arabic-9f147b.mp3"},
     {"name": "مجموعه ادعیه حسینیات (قاری نامشخص)", "url": "https://cdnaudio.hussainiat.com/hussaudio/duas/duas/collection_of_islamic_duas/dua-e-ahed.mp3"},
     {"name": "فرهمندفر", "url": "audio/ahd-aviny.mp3"}
