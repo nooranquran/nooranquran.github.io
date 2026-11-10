@@ -901,13 +901,18 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
   }
   // هم‌خوانی متن با صوت (مثل قرآن‌خوان): برای audio/x.mp3 اگر audio/sync/x.json باشد، t[i] زمان شروع بند i است (ثانیه).
   let sync = null, syncOn = -1;
+  // audio/sync/index.json: «کلید متن|نشانی صوت» → نام فایل زمان‌بندی در همان پوشه.
+  let syncIdx = null, syncFor = null;
   function loadSync(url) {
     sync = null; syncOn = -1; reader.classList.remove('cr-synced'); onTime();
-    const m = /^audio\/([\w-]+)\.mp3$/.exec(url || ''); if (!m) return;
-    fetch(`audio/sync/${m[1]}.json`).then(r => (r.ok ? r.json() : null)).then(d => {
-      if (!d || !Array.isArray(d.t) || reader.querySelector('.cr-aud audio').getAttribute('src') !== url) return;
-      sync = d.t; reader.classList.add('cr-synced'); onTime();
-    }).catch(() => {});
+    syncFor = url && current ? `${current.key}|${url}` : null; if (!syncFor) return;
+    const key = current.key, n = (current.text.sections || []).length;
+    (syncIdx ||= fetch('audio/sync/index.json').then(r => (r.ok ? r.json() : {})).catch(() => { syncIdx = null; return {}; }))
+      .then(idx => idx[`${key}|${url}`] && fetch(`audio/sync/${idx[`${key}|${url}`]}.json`).then(r => (r.ok ? r.json() : null)))
+      .then(d => {
+        if (!d || !Array.isArray(d.t) || d.t.length !== n || current?.key !== key || reader.querySelector('.cr-aud audio').getAttribute('src') !== url) return;
+        sync = d.t; reader.classList.add('cr-synced'); onTime();
+      }).catch(() => {});
   }
   function onTime(follow) {
     const au = reader.querySelector('.cr-aud audio'), now = au.currentTime;
@@ -1009,7 +1014,8 @@ ${s !== 'end' ? `<div class="chl-small"><span class="hint">کد چله: <b dir="
       const sel = aud.querySelector('select'), au = aud.querySelector('audio');
       let i = Math.max(0, list.findIndex(a => a.url === prefs.audio?.[current.key]));
       sel.innerHTML = list.map((a, k) => `<option value="${k}">${esc(a.name)}</option>`).join(''); sel.value = i;
-      if (au.getAttribute('src') !== list[i].url) { au.src = list[i].url; loadSync(list[i].url); }
+      if (au.getAttribute('src') !== list[i].url) au.src = list[i].url;
+      if (syncFor !== `${current.key}|${list[i].url}`) loadSync(list[i].url);
     } else loadSync(null);
     syncOn = -1; onTime();
   }
