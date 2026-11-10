@@ -17,6 +17,8 @@
   ],
   "audio": [
     {"name": "متن عربی، حاج میثم کاظم", "url": "https://imamali.net/files/21/07/16/qx7373.mp3"},
-    {"name": "ترجمه فارسی (کتاب گویا)", "url": "audio/sahifa-fa/07.mp3"}
+    {"name": "ترجمه فارسی (کتاب گویا)", "url": "audio/sahifa-fa/07.mp3"},
+    {"name": "محسن فرهمند آزاد", "url": "https://shiavoice.com/stream-ghcwm"},
+    {"name": "علی فانی", "url": "https://shiavoice.com/stream-XQwe5"}
   ]
 }
