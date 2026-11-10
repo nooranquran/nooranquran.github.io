@@ -1,6 +1,6 @@
 import json, glob, hashlib, os, sys, difflib, re
-sys.path.insert(0, '/home/user/nooranquran.github.io/tools/dua-sync'); from align import align, norm
-R = '/home/user/nooranquran.github.io/'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from align import align, norm
+R = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '')
 files = json.load(open('files.json')); idx = {}; report = []
 def cov(ref, hyp): return sum(n for *_, n in difflib.SequenceMatcher(None, ref, hyp, autojunk=False).get_matching_blocks())
 for f in sorted(glob.glob(R + 'chelleh/*.json') + glob.glob(R + 'books/mafatih/[0-9]*.json')):
