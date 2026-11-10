@@ -40,11 +40,15 @@ async function save(req, url, res) {
   const c = await caches.open(CACHE);
   await c.put(req, res);
   // نسخه‌های قدیمیِ همین فایل (?v= دیگر) پاک می‌شوند تا بدون اینترنت همیشه آخرین نسخه به کار رود.
-  if (url.search) for (const k of await c.keys()) { const u = new URL(k.url); if (u.pathname === url.pathname && u.search !== url.search) c.delete(k); }
+  // فقط همان مسیر خوانده می‌شود، نه همه فایل‌های ذخیره‌شده (با بسته‌های بدون اینترنت ده‌ها هزار فایل‌اند و خواندن همه، سرویس‌ورکر را کند می‌کرد).
+  if (url.search) for (const k of await c.keys(url.origin + url.pathname, { ignoreSearch: true })) if (new URL(k.url).search !== url.search) c.delete(k);
 }
 
+// زمان آخرین درخواست صفحه؛ ذخیره خودکار بسته‌های بدون اینترنت تا ۴ ثانیه بعد از آن صبر می‌کند تا اینترنت برای کار کاربر آزاد بماند.
+let lastUserFetch = 0;
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
+  lastUserFetch = Date.now();
   // فقط فایل‌های خود سایت؛ درخواست‌های پایگاه داده و سایت‌های دیگر دست‌نخورده می‌مانند.
   if (req.method !== 'GET' || url.origin !== self.location.origin || req.headers.has('range')) return;
   const keep = res => {
@@ -56,7 +60,10 @@ self.addEventListener('fetch', e => {
   if (url.searchParams.has('v') || STATIC.test(url.pathname) || TEXTS.test(url.pathname)) {
     e.respondWith(caches.match(req).then(hit => {
       if (!hit) return net().catch(offline);
-      e.waitUntil(new Promise(r => setTimeout(r, 5000)).then(net).catch(() => {}));
+      // تازه کردن در پس‌زمینه فقط اگر نسخه ذخیره‌شده بیش از ۱۲ ساعت پیش گرفته شده؛ پیش‌تر با هر باز شدن سایت همه ~۶۰ فایل دوباره
+      // دانلود می‌شد و با اینترنت کند، درست همان چند ثانیه‌ای که کاربر دعا یا قرآن را باز می‌کرد، اینترنت را می‌گرفت.
+      const age = Date.now() - (Date.parse(hit.headers.get('date')) || 0);
+      if (age > 12 * 3600e3) e.waitUntil(new Promise(r => setTimeout(r, 5000)).then(net).catch(() => {}));
       return hit;
     }));
     return;
@@ -89,20 +96,23 @@ async function offlineStatus() {
   return { v: list.v, busy: !!offlineBusy, packs: list.packs.map(p => ({ id: p.id, title: p.title, sub: p.sub, download: p.download, size: p.size, total: p.files.length, have: p.files.filter(f => have.has(absUrl(f))).length })) };
 }
 const tell = msg => self.clients.matchAll({ type: 'window' }).then(l => l.forEach(c => c.postMessage(msg)));
-async function offlineGet(ids) {
+async function offlineGet(ids, quiet) {
   const list = await getOfflineList(true), have = await cachedSet(), c = await caches.open(CACHE);
   const want = [...new Set(list.packs.filter(p => ids.includes(p.id)).flatMap(p => p.files))].filter(f => !have.has(absUrl(f)));
   let done = 0, failed = 0, last = 0, i = 0;
   const total = want.length;
   async function worker() {
     while (i < want.length) {
+      // ذخیره خودکار (quiet): آرام و با فاصله از کارهای کاربر، تا باز شدن دعا و قرآن با اینترنت کند منتظر آن نماند.
+      if (quiet) while (Date.now() - lastUserFetch < 4000) await new Promise(r => setTimeout(r, 1000));
+      if (i >= want.length) break;
       const f = want[i++];
       try { const r = await fetch(absUrl(f), { cache: 'no-cache' }); if (r.ok) await c.put(absUrl(f), r); else if (r.status !== 404) failed++; } catch { failed++; }
       done++;
       if (Date.now() - last > 700) { last = Date.now(); tell({ type: 'offline-progress', done, total }); }
     }
   }
-  await Promise.all(Array.from({ length: 6 }, worker));
+  await Promise.all(Array.from({ length: quiet ? 2 : 6 }, worker));
   const res = { type: 'offline-done', v: list.v, packs: ids, total, failed };
   tell(res);
   return res;
@@ -118,7 +128,7 @@ self.addEventListener('message', e => {
   const d = e.data || {}, reply = m => e.source?.postMessage(m);
   if (d.type === 'offline-status') e.waitUntil(offlineStatus().then(s => reply({ type: 'offline-status', ...s })).catch(() => reply({ type: 'offline-status', error: true })));
   else if (d.type === 'offline-get' && Array.isArray(d.packs)) {
-    if (!offlineBusy) offlineBusy = offlineGet(d.packs).catch(() => tell({ type: 'offline-done', error: true, packs: d.packs })).finally(() => { offlineBusy = null; });
+    if (!offlineBusy) offlineBusy = offlineGet(d.packs, !!d.quiet).catch(() => tell({ type: 'offline-done', error: true, packs: d.packs })).finally(() => { offlineBusy = null; });
     e.waitUntil(offlineBusy);
   } else if (d.type === 'offline-drop' && Array.isArray(d.packs)) e.waitUntil(offlineDrop(d.packs));
 });
