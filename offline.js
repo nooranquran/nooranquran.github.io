@@ -58,11 +58,11 @@
     el.querySelector('[data-of-no]').onclick = () => set('no');
   }
 
-  function get(ids) {
+  function get(ids, quiet) {
     if (running) return;
     if (!navigator.onLine) { failNote = 'برای ذخیره کردن، اینترنت لازم است.'; paint(); return; }
     running = ids; progress = null; failNote = ''; paint();
-    send({ type: 'offline-get', packs: ids });
+    send({ type: 'offline-get', packs: ids, quiet: !!quiet });
   }
 
   // ---------- برگه ----------
@@ -141,7 +141,7 @@
       const v = (await (await fetch('offline.json', { cache: 'no-store' })).json()).v;
       if (AUTO.every(p => done()[p] === v)) { offerPending = true; ask(); return; }
     } catch { return; }
-    get(AUTO);
+    get(AUTO, true);
   }
   const later = () => setTimeout(auto, 8000);
   if (document.readyState === 'complete') later(); else addEventListener('load', later, { once: true });
