@@ -65,6 +65,21 @@ def align(sections, words, field='ar'):
         elif v is not None: last = v
     return t, len(pair) / R
 
+
+def fill_gaps(sections, t, field='ar'):
+    """Estimate sections the recogniser missed from their neighbours, by text length,
+    so the highlight never stalls on a passage. Only gaps between two heard passages are filled."""
+    L = [len(norm(s.get(field) or '')) if s.get('ar') else 0 for s in sections]
+    known = [i for i, v in enumerate(t) if v is not None]
+    if len(known) < 2: return t
+    t = list(t)
+    for a, b in zip(known, known[1:]):
+        c = sum(L[a:b]); acc = t[a]
+        for i in range(a + 1, b):
+            acc += (t[b] - t[a]) * L[i - 1] / c if c else 0
+            if L[i]: t[i] = round(acc, 1)
+    return t
+
 if __name__ == '__main__':
     txt = json.load(open(sys.argv[1])); words = json.load(open(sys.argv[2]))
     t, ratio = align(txt['sections'], words, sys.argv[4] if len(sys.argv) > 4 else 'ar')
